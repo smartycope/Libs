@@ -31,7 +31,9 @@ __copyright__ = '(c) 2021, Copeland Carter'
 # Add a bunch of Errors and warnings you can raise (like depricationWarning/error, and some others)
 # make log, and allow it to write to a file as well as command line
 # maybe write a warn function, and probably just have it call log with parameters
-# Shift (JUST FREAKING SHIFT) doesn't work with KeyShortcut. No clue why. Debug eventually
+# Shift (JUST FREAKING SHIFT) doesn't work with KeyShortcut. No clue why. Debug eventually.
+# Add the + operator to keys so you can add keys to make a KeyShortcut (figure out prototyping)
+# Make debug show generators (map, filter, range, etc) like lists and other iterables
 
 
 ################################### Imports ###################################
@@ -1044,6 +1046,7 @@ class FunctionCall:
     def call(self, *args, override_args=False, **kwargs):
         return self.__call__(*args, override_args, **kwargs)
 
+    @debug
     def __call__(self, *args, override_args=False, **kwargs):
         """ If you specify parameters and don't explicitly set override_args to True,
             then the given parameters are ignored and the previously set parameters are used.
@@ -1062,6 +1065,7 @@ class Signal:
     def connect(self, func, *args, **kwargs):
         self.funcs.append(FunctionCall(func, args, kwargs))
 
+    @debug
     def __call__(self, *args, override_args=False, **kwargs):
         """ If you specify parameters and don't explicitly set override_args to True,
             then the given parameters are ignored and the previously set parameters are used.
@@ -1069,7 +1073,9 @@ class Signal:
             every function given with connect().
         """
         # rtns = ()
+        debug(self.funcs)
         for f in self.funcs:
+            debug(f, 'calling')
             f(*args, override_args=override_args, **kwargs)
 
         # return rtns[0] if len(rtns) <= 1 else rtns
@@ -1920,16 +1926,22 @@ class KeyShortcut:
     def update(self, key, pressed):
         key = Key(key) if self.useRightLeft else Key.dropRightLeft(Key(key))
 
-        debug(self.heldKeys, clr=3)
+        debug(key, 'shortcut update key', clr=2)
+
+        # debug(self.heldKeys, clr=3)
         if pressed:
             self.heldKeys.add(key)
         else:
-            if key == Key('shift'):
-                self.heldKeys.clear()
-            else:
+            # if key == Key('shift'):
+                # self.heldKeys.clear()
+            # else:
+            try:
                 self.heldKeys.remove(key)
+            except KeyError:
+                self.heldKeys.clear()
 
-        debug(self.heldKeys, clr=4)
+
+        # debug(self.heldKeys, clr=4)
 
         valid = True
         for i in self.keys:
@@ -1938,6 +1950,7 @@ class KeyShortcut:
                 break
 
         if valid:
+            debug("Shortcut Triggered!")
             self.triggered.call()
 
 @todo
