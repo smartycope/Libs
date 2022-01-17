@@ -36,6 +36,12 @@ __copyright__ = '(c) 2021, Copeland Carter'
 # Make debug show generators (map, filter, range, etc) like lists and other iterables
 # Change signal to have the constructor take parameters, and only those (and exactly those) parameters can be passed along (like Qt)
 # checkImport vs ensureImport
+# add a priority parameter to todo (maybe change the color?)
+# My color function (whatever is coloring debug and todo) still colors errors after it. possibly in a different thread.
+# remove duplicates sucks (still returning a generator)
+# debug doesn't display lists properly when using repr
+# Make debug print the value entirely on the next line if it wont all fit on this line
+# debug's shortened paths don't work anymore because ROOT doesn't work anymore
 
 
 ################################### Imports ###################################
@@ -354,6 +360,7 @@ def dependsOnPackage(package:str, specificModules=[], _as=None,
 ################################### Debug ###################################
 varnameImported = ensureImported('varname', ('ImproperUseError', 'VarnameRetrievingError', 'argname', 'nameof'), fatal=False)
 DEBUGGING_DEBUG = False
+_repr = repr
 
 def _debugGetMetaData(calls=1):
     """ Gets the meta data of the line you're calling this function from.
@@ -620,7 +627,7 @@ def debug(var=_None,                # The variable to debug
           stackTrace: bool=False,   # Print a stack trace
           raiseError: bool=False,   # If var is an error type, raise it
           clr=_None,                # Alias of color
-          _repr: bool=False,        # Alias of useRepr
+          repr: bool=False,         # Alias of useRepr
           trace: bool=False,        # Alias of stackTrace
           bg: bool=False,           # Alias of background
           throwError: bool=False,   # Alias of raiseError
@@ -655,7 +662,7 @@ def debug(var=_None,                # The variable to debug
             bg: Alias of background
     """
     stackTrace = stackTrace or trace
-    useRepr = useRepr or _repr
+    useRepr = useRepr or repr
     background = background or bg
     throwError = throw or throwError or raiseError
     useColor = (Colors.DEFAULT_DEBUG if clr is _None else clr) if color is _None else color
@@ -723,7 +730,7 @@ def debug(var=_None,                # The variable to debug
     #* Seperate the variables into a tuple of (typeStr, varString)
     varType = _debugGetTypename(var)
     if useRepr:
-        varVal = repr(var)
+        varVal = _repr(var)
     else:
         if type(var) in (tuple, list, set, dict):
             varVal  = _debugGetListStr(var, limitToLine, minItems, maxItems)
@@ -1079,7 +1086,6 @@ class FunctionCall:
     def call(self, *args, override_args=False, **kwargs):
         return self.__call__(*args, override_args, **kwargs)
 
-    @debug
     def __call__(self, *args, override_args=False, **kwargs):
         """ If you specify parameters and don't explicitly set override_args to True,
             then the given parameters are ignored and the previously set parameters are used.
@@ -1091,24 +1097,27 @@ class FunctionCall:
 
 class Signal:
     """ A custom Signal implementation. Connect with the connect() function """
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
+        self.viableArgsCount = len(args)
+        self.viableKwargs = kwargs.keys()
         self.funcs = []
         self.call = self.__call__
 
-    def connect(self, func, *args, **kwargs):
-        self.funcs.append(FunctionCall(func, args, kwargs))
+    def connect(self, func):
+        self.funcs.append(FunctionCall(func))
 
     def emit(self, *args, **kwargs):
         self.__call__(*args, **kwargs)
 
-    def __call__(self, *args, override_args=False, **kwargs):
-        """ If you specify parameters and don't explicitly set override_args to True,
-            then the given parameters are ignored and the previously set parameters are used.
-            WARNING: If override_args is set to True, the given parameters will be passed into
-            every function given with connect().
-        """
+    def __call__(self, *args, **kwargs):
         for f in self.funcs:
-            f(*args, override_args=override_args, **kwargs)
+            # Verify that the parameters are valid
+            if len(args) != self.viableArgsCount:
+                raise TypeError("Signal emitted with incorrect number of parameters")
+            for i in kwargs.keys():
+                if i not in self.viableKwargs:
+                    raise TypeError("Signal emitted with invalid keyword argument")
+            f(*args, override_args=True, **kwargs)
 
 class KeyStandard:
     ascii = {
