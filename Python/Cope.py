@@ -34,6 +34,8 @@ __copyright__ = '(c) 2021, Copeland Carter'
 # Shift (JUST FREAKING SHIFT) doesn't work with KeyShortcut. No clue why. Debug eventually.
 # Add the + operator to keys so you can add keys to make a KeyShortcut (figure out prototyping)
 # Make debug show generators (map, filter, range, etc) like lists and other iterables
+# Change signal to have the constructor take parameters, and only those (and exactly those) parameters can be passed along (like Qt)
+# checkImport vs ensureImport
 
 
 ################################### Imports ###################################
@@ -276,10 +278,41 @@ def invertColor(r, g=None, b=None, a=None):
     return tuple(255 - c for c in rgba[0])
 
 ################################### Import Utilities ###################################
+def ensureImported(package:str, specificModules=[], _as=None,
+                fatal:bool=False, printWarning:Union[str, bool]=True,
+                _globals=globals(), _locals=locals(), level=0
+                ) -> "(Union[package, (packages,)], worked)":
+    if type(specificModules) is str:
+        specificModules = [specificModules]
+    try:
+        _temp = __import__(package, _globals, _locals, specificModules, level)
+    except ImportError:
+        if type(printWarning) is str:
+            print(printWarning)
+        elif printWarning:
+            if len(specificModules):
+                print(f'Can\'t import {tuple(specificModules)} from {package}. Have you installed the associated pip package? (try "pip install {pacakge}")')
+            else:
+                print(f'Can\'t import {package}. Have you installed the associated pip package? (try "pip install {pacakge}")')
+        if fatal:
+            raise ImportError(package)
+        return False
+    else:
+        if len(specificModules):
+            for i in specificModules[:-1]:
+                globals()[i] = _temp.__getattribute__(i)
+            globals()[_as if _as else specificModules[-1]] = _temp.__getattribute__(specificModules[-1])
+        else:
+            globals()[_as if _as else package] = _temp
+        return True
+
+
+# todo
 def checkImport(package:str, specificModules=[], _as=None,
                 fatal:bool=False, printWarning:Union[str, bool]=True,
                 _globals=globals(), _locals=locals(), level=0
                 ) -> "(Union[package, (packages,)], worked)":
+    return
     if type(specificModules) is str:
         specificModules = [specificModules]
     try:
@@ -309,7 +342,7 @@ def dependsOnPackage(package:str, specificModules=[], _as=None,
                 _globals=globals(), _locals=locals(), level=0):
     def wrap(func):
         def innerWrap(*funcArgs, **funcKwArgs):
-            if checkImport(package, specificModules, _as, fatal,
+            if ensureImported(package, specificModules, _as, fatal,
                            printWarning, globals, locals, level):
                 return func(*funcArgs, **funcKwArgs)
             else:
@@ -319,7 +352,7 @@ def dependsOnPackage(package:str, specificModules=[], _as=None,
 
 
 ################################### Debug ###################################
-varnameImported = checkImport('varname', ('ImproperUseError', 'VarnameRetrievingError', 'argname', 'nameof'), fatal=False)
+varnameImported = ensureImported('varname', ('ImproperUseError', 'VarnameRetrievingError', 'argname', 'nameof'), fatal=False)
 DEBUGGING_DEBUG = False
 
 def _debugGetMetaData(calls=1):
@@ -1065,20 +1098,17 @@ class Signal:
     def connect(self, func, *args, **kwargs):
         self.funcs.append(FunctionCall(func, args, kwargs))
 
-    @debug
+    def emit(self, *args, **kwargs):
+        self.__call__(*args, **kwargs)
+
     def __call__(self, *args, override_args=False, **kwargs):
         """ If you specify parameters and don't explicitly set override_args to True,
             then the given parameters are ignored and the previously set parameters are used.
             WARNING: If override_args is set to True, the given parameters will be passed into
             every function given with connect().
         """
-        # rtns = ()
-        debug(self.funcs)
         for f in self.funcs:
-            debug(f, 'calling')
             f(*args, override_args=override_args, **kwargs)
-
-        # return rtns[0] if len(rtns) <= 1 else rtns
 
 class KeyStandard:
     ascii = {
@@ -2445,14 +2475,14 @@ def getDist(ax, ay, bx, by):
 
 def deg2rad(a, symbolic=False):
     if symbolic:
-        if checkImport('sympy', 'pi', fatal=True):
+        if ensureImported('sympy', 'pi', fatal=True):
             return (a * pi / 180).simplify()
     else:
         return a * PI / 180.0
 
 def rad2deg(a, symbolic=False):
     if symbolic:
-        if checkImport('sympy', 'pi', fatal=True):
+        if ensureImported('sympy', 'pi', fatal=True):
             return (a * 180 / pi).simplify()
     else:
         return a * 180.0 / PI
