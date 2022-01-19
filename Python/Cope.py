@@ -34,7 +34,6 @@ __copyright__ = '(c) 2021, Copeland Carter'
 # Shift (JUST FREAKING SHIFT) doesn't work with KeyShortcut. No clue why. Debug eventually.
 # Add the + operator to keys so you can add keys to make a KeyShortcut (figure out prototyping)
 # Make debug show generators (map, filter, range, etc) like lists and other iterables
-# Change signal to have the constructor take parameters, and only those (and exactly those) parameters can be passed along (like Qt)
 # checkImport vs ensureImport
 # add a priority parameter to todo (maybe change the color?)
 # My color function (whatever is coloring debug and todo) still colors errors after it. possibly in a different thread.
@@ -42,6 +41,7 @@ __copyright__ = '(c) 2021, Copeland Carter'
 # debug doesn't display lists properly when using repr
 # Make debug print the value entirely on the next line if it wont all fit on this line
 # debug's shortened paths don't work anymore because ROOT doesn't work anymore
+# Make debug's nice iterable printer recursively call itself (so a list of lists still prints nice on all levels)
 
 
 ################################### Imports ###################################
