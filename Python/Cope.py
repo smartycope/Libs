@@ -2,46 +2,52 @@
 """ Cope.py
 A bunch of generic functions and classes useful in multiple projects
 """
-__version__ = '3.1.0'
+__version__ = '3.2.0'
 __author__ = 'Copeland Carter'
 __email__ = 'smartycope@gmail.com'
 __license__ = 'GPL 3.0'
 __copyright__ = '(c) 2021, Copeland Carter'
 
 ################################### Suggested Features ###################################
-# make confidence print the confidence level
-# make that self-modifying function, both one that removes itself and one that adds a line above it
-# I think @debug and @todo are still failing periodically
-# Add a function that takes a parameter and a bunch of values and just checks to see if the parameter is one of those values,
-#   otherwise throws a type error with a preset message
-# get the key class that I wrote on Rebecca
-# change _debugBeingUsedAsDecorator() to use an enum of decorator types, and also make it generally useable
-# also, couldn't it automatically get the function name from the metadata?
-# write an alias decorator that sets the thing it's decorating to a provided alias and injects it into the global namespace
-# add a filter parameter that lets you specify a function that must return true
-# if todo is called with no parameters, make it say "{functionName} needs implemented!" or something
-# Add a global that makes it so confidence always prints it's confidence level
-# Uhh... how do I not have a logging function??? Add a logging function, a global debug level, possibly a debug level enum,
-#   and incorperate verbose
-# A title case function that doesn't ignore exisiting case
-# make an intuituve case funciton that doens't capitalize little words like 'and' and 'of' and such
-# Add string color names to parseColor
-# The manual debug regex to parse a line doesn't really work (is it even possible to do that with regex?)
-# ROOT doesn't work (I suspect DIR doesn't either)
-# Add a bunch of Errors and warnings you can raise (like depricationWarning/error, and some others)
-# make log, and allow it to write to a file as well as command line
-# maybe write a warn function, and probably just have it call log with parameters
-# Shift (JUST FREAKING SHIFT) doesn't work with KeyShortcut. No clue why. Debug eventually.
-# Add the + operator to keys so you can add keys to make a KeyShortcut (figure out prototyping)
-# Make debug show generators (map, filter, range, etc) like lists and other iterables
-# checkImport vs ensureImport
-# add a priority parameter to todo (maybe change the color?)
-# My color function (whatever is coloring debug and todo) still colors errors after it. possibly in a different thread.
-# remove duplicates sucks (still returning a generator)
-# debug doesn't display lists properly when using repr
-# Make debug print the value entirely on the next line if it wont all fit on this line
-# debug's shortened paths don't work anymore because ROOT doesn't work anymore
-# Make debug's nice iterable printer recursively call itself (so a list of lists still prints nice on all levels)
+#! make confidence print the confidence level -- needs testing
+#! make that self-modifying function, both one that removes itself and one that adds a line above it -- needs more testing
+#! KeyShortcut could use more testing
+#? I think @debug and @todo are still failing periodically -- needs debugging
+#// Add a function that takes a parameter and a bunch of values and just checks to see if the parameter is one of those values, otherwise throws a type error with a preset message -- Done?
+#// get the key class that I wrote on Rebecca
+#todo change _debugBeingUsedAsDecorator() to use an enum of decorator types, and also make it generally useable
+#todo also, couldn't it automatically get the function name from the metadata?
+#todo write an alias decorator that sets the thing it's decorating to a provided alias and injects it into the global namespace
+# add a filter parameter that lets you specify a function that must return true -- dont remember what this means
+#todo if todo is called with no parameters, make it say "{functionName} needs implemented!" or something
+#todo make log, and allow it to write to a file as well as command line
+#todo Uhh... how do I not have a logging function??? Add a logging function, a global debug level, possibly a debug level enum, and incorperate verbose
+#todo make verbose and debug level more globally implemented
+#todo A title case function that doesn't ignore exisiting case
+#todo make an intuituve case funciton that doens't capitalize little words like 'and' and 'of' and such
+#todo Add string color names to parseColor
+#? The manual debug regex to parse a line doesn't really work (is it even possible to do that with regex?)
+#? ROOT doesn't work (I suspect DIR doesn't either)
+#todo Add a bunch of Errors and warnings you can raise (like depricationWarning/error, and some others)
+#todo maybe write a warn function, and probably just have it call log with parameters
+#? Shift (JUST FREAKING SHIFT) doesn't work with KeyShortcut. No clue why. Debug eventually.
+#? Add the + operator to keys so you can add keys to make a KeyShortcut (figure out prototyping)
+#todo Make debug show generators (map, filter, range, etc) like lists and other iterables
+#todo checkImport vs ensureImport
+#todo add a priority parameter to todo (maybe change the color?)
+#? My color function (whatever is coloring debug and todo) still colors errors after it. possibly in a different thread.
+#? remove duplicates sucks (still returning a generator)
+#? debug doesn't display lists properly when using repr
+#todo Make debug print the value entirely on the next line if it wont all fit on this line
+#? debug's shortened paths don't work anymore because ROOT doesn't work anymore
+#? Make debug's nice iterable printer recursively call itself (so a list of lists still prints nice on all levels)
+#todo Make ensureImport/checkImport pass whether it's imported or not to the @'ed fucntion as a named keyword arguement
+#todo Add more parameters to depricated
+#todo Make get metadata more globally useful
+#todo change all "calls" parameters to "additionalCalls", cause that makes more sense
+#todo add ifUsedAsDecorator to warn
+#? in _debugGetListStr, somehow round any float to a given length, including those printed in iterables
+#? Finish writing KeyChord and such
 
 
 ################################### Imports ###################################
@@ -85,7 +91,7 @@ ROOT = dirname(DIR) if basename(DIR) in ('src', 'source') else DIR
 MAX_INT_SIZE = 2147483645
 
 VERBOSE = True
-DEBUG_LEVEL = 0
+DEBUG_LEVEL = LOG_LEVEL = 0
 
 # A unique dummy class for parameters
 class _None: pass
@@ -129,9 +135,9 @@ def verbose():
     global VERBOSE
     return VERBOSE
 
-def setDebugLevel(to):
-    global DEBUG_LEVEL
-    DEBUG_LEVEL = to
+def setLogLevel(to):
+    global LOG_LEVEL
+    LOG_LEVEL = to
 
 
 ################################### Enums ###################################
@@ -149,10 +155,11 @@ class CommonResponses:
     SOME_AMOUNT = ('a little bit', 'a bit', 'a little', 'ish', 'not a lot', 'not a ton', 'some', 'mostly')
     LOW_AMOUNT  = ("not at all", 'not very', 'not much', 'low', 'none', 'none at all', 'not terribly')
 
-class DebugLevel(Enum):
+class LogLevel(Enum):
     NONE = 0
-    WARNINGS = 1
-    ERRORS = 2
+    LOGGING = 1
+    WARNINGS = 2
+    ERRORS = 3
 
 class Colors:
     # Default color constants
@@ -174,6 +181,7 @@ class Colors:
     STACK_TRACE        = (159, 148, 211)
     CONFIDENCE_WARNING = (255, 190, 70)
     DEPRICATED_WARNING = WARN
+    LOG_COLOR          = (100, 130, 140)
 
     DEBUG_EQUALS          = DEFAULT
     DEBUG_METADATA_DARKEN = 70
@@ -201,8 +209,11 @@ def parseColorParams(r, g=None, b=None, a=None, bg=False) -> "((r, g, b, a), bac
         Note: Seperate color specifications for foreground and background are not currently
         supported. bg is just a bool.
     """
+    #* We've been given the name of a color
+    if type(r) is str:
+        raise NotImplementedError(f"parseColorParams does not yet support named colors")
     #* We've been given a list of values
-    if type(r) in (tuple, list):
+    elif type(r) in (tuple, list):
         if len(r) not in (3, 4):
             raise SyntaxError(f'Incorrect number ({len(r)}) of color parameters given')
         else:
@@ -283,6 +294,7 @@ def invertColor(r, g=None, b=None, a=None):
     rgba = parseColorParams(r, g, b, a)[0]
     return tuple(255 - c for c in rgba[0])
 
+
 ################################### Import Utilities ###################################
 def ensureImported(package:str, specificModules=[], _as=None,
                 fatal:bool=False, printWarning:Union[str, bool]=True,
@@ -312,12 +324,12 @@ def ensureImported(package:str, specificModules=[], _as=None,
             globals()[_as if _as else package] = _temp
         return True
 
-
 # todo
 def checkImport(package:str, specificModules=[], _as=None,
                 fatal:bool=False, printWarning:Union[str, bool]=True,
                 _globals=globals(), _locals=locals(), level=0
-                ) -> "(Union[package, (packages,)], worked)":
+                ) -> tuple(Union[package, (packages,)], worked):
+    todo()
     return
     if type(specificModules) is str:
         specificModules = [specificModules]
@@ -380,8 +392,6 @@ def _debugGetLink(calls=0, full=False, customMetaData=None):
 
     _printLink(d.filename, d.lineno, d.function if full else None)
 
-#todo This doesn't work right
-#todo somehow round any float to a given length, including those printed in iterables
 def _debugGetListStr(iterable: Union[tuple, list, set, dict], useMultiline:bool=True, limitToLine: bool=False, minItems: int=2, maxItems: int=50) -> str:
     """ "Cast" a tuple, list, set or dict to a string, automatically shorten
         it if it's long, and display how long it is.
@@ -761,6 +771,17 @@ def debug(var=_None,                # The variable to debug
     return var
 
 
+################################### Other Logging-Type Functions ###################################
+def log(message, levelReq=LogLevel.LOGGING):
+    if LOG_LEVEL >= levelReq:
+        printContext(2)
+        with coloredOutput(Colors.LOG_COLOR):
+            print(message)
+
+def warn():
+    return
+
+
 ################################### Decorators ###################################
 def todo(featureName=None, enabled=True, blocking=True, showFunc=True, showFile=True, showPath=False):
     """ Leave reminders for yourself to finish parts of your code.
@@ -811,29 +832,31 @@ def todo(featureName=None, enabled=True, blocking=True, showFunc=True, showFile=
         printTodo(False)
 
 def confidence(level, interpretAs:int=None):
-    # debug(level)
-    # debug(interpretAs)
     def wrap(func):
-        # debug(func)
         def innerWrap(*funcArgs, **funcKwArgs):
-            # debug(funcArgs)
-            # debug(funcKwArgs)
             definiteFailResponses = ()
             possiblyFailResponses = ()
             probablyFailResponses = ()
 
+            def getPrettyLevel():
+                if type(level) is str:
+                    return f'({level} confident)'
+                else:
+                    assert(type(level) in (int, float))
+                    return f'({level}% certainty)'
+
             def definiteFail():
-                raise UserWarning(f"{func.__name__} is going to fail.")
+                raise UserWarning(f"{func.__name__} is going to fail. {getPrettyLevel()}")
 
             def probablyFail():
                 printContext(3, darken(80, Colors.ALERT), showFunc=False)
                 with coloredOutput(Colors.ALERT):
-                    print(f"Warning: {func.__name__} will probably fail")
+                    print(f"Warning: {func.__name__} will probably fail. {getPrettyLevel()}")
 
             def possiblyFail():
                 printContext(3, darken(80, Colors.CONFIDENCE_WARNING), showFunc=False)
                 with coloredOutput(Colors.CONFIDENCE_WARNING):
-                    print(f"Warning: {func.__name__} might not work")
+                    print(f"Warning: {func.__name__} might not work. {getPrettyLevel()}")
 
             def unknownInput():
                 if interpretAs is None:
@@ -860,7 +883,8 @@ def confidence(level, interpretAs:int=None):
                     )
                     possiblyFail()
 
-            if type(level) is int:
+            if type(level) in (int, float):
+                # This is a pet-peeve
                 if level > 100:
                     raise TypeError(f"You can't be {level}% confident, that's not how it works.")
                 elif level < 0:
