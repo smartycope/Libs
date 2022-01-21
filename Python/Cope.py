@@ -48,6 +48,8 @@ __copyright__ = '(c) 2021, Copeland Carter'
 #todo add ifUsedAsDecorator to warn
 #? in _debugGetListStr, somehow round any float to a given length, including those printed in iterables
 #? Finish writing KeyChord and such
+#? Todo as a decorator is called in the global scope instead of when the function is called
+#todo add a log level parameter to debug
 
 
 ################################### Imports ###################################
@@ -328,7 +330,7 @@ def ensureImported(package:str, specificModules=[], _as=None,
 def checkImport(package:str, specificModules=[], _as=None,
                 fatal:bool=False, printWarning:Union[str, bool]=True,
                 _globals=globals(), _locals=locals(), level=0
-                ) -> tuple(Union[package, (packages,)], worked):
+                ) -> "(Union[package, (packages,)], worked)":
     todo()
     return
     if type(specificModules) is str:
@@ -772,14 +774,15 @@ def debug(var=_None,                # The variable to debug
 
 
 ################################### Other Logging-Type Functions ###################################
-def log(message, levelReq=LogLevel.LOGGING):
-    if LOG_LEVEL >= levelReq:
+def log(message, levelReq=LogLevel.LOGGING, color=Colors.LOG_COLOR):
+    if LOG_LEVEL >= levelReq.value:
         printContext(2)
-        with coloredOutput(Colors.LOG_COLOR):
+        with coloredOutput(color):
             print(message)
 
-def warn():
-    return
+def warn(message):
+    log(message, color=Colors.WARN)
+warning = warn
 
 
 ################################### Decorators ###################################
@@ -859,6 +862,10 @@ def confidence(level, interpretAs:int=None):
                     print(f"Warning: {func.__name__} might not work. {getPrettyLevel()}")
 
             def unknownInput():
+                # If we don't understand the input, just give a soft warning (it will display what the input is, anyway)
+                possiblyFail()
+                return
+
                 if interpretAs is None:
                     raise TypeError(f"I don't recognize {level} as a confidence level.")
 
