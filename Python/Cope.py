@@ -331,7 +331,7 @@ def checkImport(package:str, specificModules=[], _as=None,
                 fatal:bool=False, printWarning:Union[str, bool]=True,
                 _globals=globals(), _locals=locals(), level=0
                 ) -> "(Union[package, (packages,)], worked)":
-    todo()
+    # todo()
     return
     if type(specificModules) is str:
         specificModules = [specificModules]
@@ -786,7 +786,7 @@ warning = warn
 
 
 ################################### Decorators ###################################
-def todo(featureName=None, enabled=True, blocking=True, showFunc=True, showFile=True, showPath=False):
+def todo(featureName=None, enabled=True, blocking=False, showFunc=True, showFile=True, showPath=False):
     """ Leave reminders for yourself to finish parts of your code.
         Can be manually turned on or off with hideAllTodos(bool).
         Can also be used as a decorator (function, or class) to print a reminder
