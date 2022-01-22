@@ -811,6 +811,8 @@ def todo(featureName=None, enabled=True, blocking=False, showFunc=True, showFile
                                        showPath or DISPLAY_PATH), end='')
                 # This is coincidental, but it works
                 print(f'TODO: {featureName.__name__ if disableFunc else featureName}')
+            if blocking:
+                raise NotImplementedError()
 
     # Being used as a function decorator, or we're not sure
     if situation in (1, 3):
