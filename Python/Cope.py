@@ -848,7 +848,7 @@ def confidence(level, interpretAs:int=None):
                     return f'({level} confident)'
                 else:
                     assert(type(level) in (int, float))
-                    return f'({level}% certainty)'
+                    return f'({level}% confidence)'
 
             def definiteFail():
                 raise UserWarning(f"{func.__name__} is going to fail. {getPrettyLevel()}")
