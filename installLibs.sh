@@ -2,7 +2,7 @@
 
 # echo Installing Libs...
 libsPath=${HOME}/hello/Libs
-export PYTHONPATH=${PYTHONPATH}:$libsPath/Python
+export PYTHONPATH=${PYTHONPATH}:$libsPath/Python:~/hello/python/MathTranspiler/src/
 export C_INCLUDE_PATH=${C_INCLUDE_PATH}:$libsPath/C
 export CPLUS_INCLUDE_PATH=${CPLUS_INCLUDE_PATH}:$libsPath/C++
 # echo Finished Installing Libs

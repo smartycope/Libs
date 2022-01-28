@@ -50,6 +50,9 @@ __copyright__ = '(c) 2021, Copeland Carter'
 #? Finish writing KeyChord and such
 #? Todo as a decorator is called in the global scope instead of when the function is called
 #todo add a log level parameter to debug
+#todo make tested/untested their own functions (similar, but not the same as confidence)
+#? importpath works, but it could use some fine tuning
+#todo tested and untested don't give the right metadata (cause they're called somewhere else)
 
 
 ################################### Imports ###################################
@@ -66,7 +69,11 @@ from typing import Any, Callable, Iterable, Optional, Union
 from enum import Enum, auto
 from copy import deepcopy
 from os import get_terminal_size
-
+from collections import namedtuple
+from pathlib import Path
+import importlib
+from importlib import util as importutil
+import sys
 
 ################################### Constants ###################################
 ENABLE_TESTING = True
@@ -88,6 +95,7 @@ HIDE_TODO    = False
 #* Convenience commonly used paths. ROOT can be set by the setRoot() or markRoot() functions
 DIR  = dirname(__file__)
 ROOT = dirname(DIR) if basename(DIR) in ('src', 'source') else DIR
+HOME = str(Path.home())
 
 # Yes, this is not strictly accurate.
 MAX_INT_SIZE = 2147483645
@@ -369,6 +377,14 @@ def dependsOnPackage(package:str, specificModules=[], _as=None,
                 return None
         return innerWrap
     return wrap
+
+def importpath(path, name, moduleName):
+    spec = importutil.spec_from_file_location(name, path)
+    module = importutil.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    # This is kinda ugly and nasty, but it works. For now.
+    globals()[moduleName] = importlib.import_module(name, moduleName).__getattribute__(moduleName)
 
 
 ################################### Debug ###################################
@@ -919,6 +935,8 @@ def confidence(level, interpretAs:int=None):
         return innerWrap
     return wrap
 confident = confidence
+untested = confidence(21)
+tested = confidence(80)
 
 def depricated(why=''):
     def wrap(func):
@@ -2425,6 +2443,7 @@ class MappingList(list):
 
 
 ################################### Misc. Useful Functions ###################################
+struct = namedtuple # I'm used to C
 @todo('Make this use piping and return the command output', False)
 def runCmd(args):
     """ Run a command and terminate if it fails. """
