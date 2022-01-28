@@ -3,6 +3,7 @@ import EasyRegex as er
 import re, math, os
 from os.path import dirname, join
 import clipboard as clip
+from clipboard import copy, paste
 import scinot
 from sympy import *
 from sympy import abc
@@ -49,3 +50,5 @@ def voltDivider(r1, r2) -> 'voltage':
 
 s = series
 ll = parallel
+
+# ≈θ𝜙°Ω±𝛼𝚫𝜔
