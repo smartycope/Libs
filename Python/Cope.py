@@ -65,7 +65,7 @@ from inspect import stack
 from os.path import basename, dirname, join
 from random import randint
 from time import process_time
-from typing import Any, Callable, Iterable, Optional, Union
+from typing import Any, Callable, Iterable, Optional, Union, SupportsInt
 from enum import Enum, auto
 from copy import deepcopy
 from os import get_terminal_size
@@ -105,6 +105,8 @@ DEBUG_LEVEL = LOG_LEVEL = 0
 
 # A unique dummy class for parameters
 class _None: pass
+
+number = Union[int, float, SupportsInt]
 
 
 ################################### Setters for Globals ###################################
@@ -424,9 +426,9 @@ def _debugGetListStr(iterable: Union[tuple, list, set, dict], useMultiline:bool=
             If limitToLine is True, it will overrule maxItems, but *not* minItems
     """
     def getBrace(opening):
-        if type(iterable) is list:
+        if isinstance(iterable, list):
             return '[' if opening else ']'
-        elif type(iterable) in (set, dict):
+        elif isinstance(iterable, (set, dict)):
             return '{' if opening else '}'
         else:
             return '(' if opening else ')'
@@ -437,7 +439,7 @@ def _debugGetListStr(iterable: Union[tuple, list, set, dict], useMultiline:bool=
     # Print in lines
     if (not limitToLine and len(defaultStr) + len(lengthAddOn) > (get_terminal_size().columns / 2)) or useMultiline:
         rtnStr = f'{lengthAddOn} {getBrace(True)}'
-        if type(iterable) is dict:
+        if isinstance(iterable, dict):
             for key, val in iterable.items():
                 rtnStr += f'\n\t<{type(key).__name__}> {key}: <{type(val).__name__}> {val}'
         else:
@@ -760,7 +762,7 @@ def debug(var=_None,                # The variable to debug
     if useRepr:
         varVal = _repr(var)
     else:
-        if type(var) in (tuple, list, set, dict):
+        if isinstance(var, (tuple, list, set, dict)):
             varVal  = _debugGetListStr(var, limitToLine, minItems, maxItems)
         else:
             varVal  = str(var)
@@ -802,7 +804,9 @@ warning = warn
 
 
 ################################### Decorators ###################################
-def todo(featureName=None, enabled=True, blocking=False, showFunc=True, showFile=True, showPath=False):
+__todoCalls = set()
+def todo(featureName=None, enabled=True, blocking=False, limitCalls=True,
+         showFunc=True, showFile=True, showPath=False):
     """ Leave reminders for yourself to finish parts of your code.
         Can be manually turned on or off with hideAllTodos(bool).
         Can also be used as a decorator (function, or class) to print a reminder
@@ -810,6 +814,13 @@ def todo(featureName=None, enabled=True, blocking=False, showFunc=True, showFile
     """
     metadata  = _debugGetMetaData(2)
     situation = _debugBeingUsedAsDecorator('todo', metadata)
+    # First off, if we're limiting calls, check if we've already been called
+    uniqueID = (metadata.lineno, metadata.filename)
+    if limitCalls and uniqueID in __todoCalls:
+        return
+    else:
+        __todoCalls.add(uniqueID)
+
     # def decorator(*decoratorArgs, **decoratorKwArgs):
     #     def wrap(func):
     #         def innerWrap(*funcArgs, **funcKwArgs):
@@ -2441,6 +2452,16 @@ class MappingList(list):
             self[i] = self[i].__coerce__(other)
         return self
 
+class ZerosDict(dict):
+    """ Exactly the same thing as a regular dict, except if you try to get an item that
+        doesn't exist, it just returns None instead of raising an error (but does not create
+        that index)
+    """
+    def __getitem__(self, key):
+        if key in self:
+            return super().__getitem__(key)
+        else:
+            return None
 
 ################################### Misc. Useful Functions ###################################
 struct = namedtuple # I'm used to C
