@@ -41,7 +41,6 @@ def have(*obj):
         if i is None:
             yes = False
     return yes
-
 # returns true if all of the parameters are None
 def need(*obj):
     yes = True
@@ -49,7 +48,6 @@ def need(*obj):
         if i is not None:
             yes = False
     return yes
-
 # returns true if there's no more than 1 None parameter
 def involves(*obj):
     unknowns = 0
@@ -57,7 +55,6 @@ def involves(*obj):
         if i is None:
             unknowns += 1
     return unknowns <= 1
-
 # returns the only parameter equal to None (or None if there are more or less than 1)
 def unknown(d:dict, *obj:str):
     if Counter(d.values())[None] != 1:
@@ -78,14 +75,9 @@ def series(*resistors):
 def voltDivider(inVoltage, r1, r2) -> 'voltage in the middle':
     return (inVoltage * r2) / (r1 + r2)
 
-# grandpa satan
-# barage corbin with genuine complements
-# soda + salad packet + warmslough
-# berlin wall
-# chaperone on shopping trips
 
 # masterSolve Functions
-def ohmsLaw(v=None, i=None, r=None, p=None) -> 'dict(v, i, r, p)':
+def solveOhmsLaw(v=None, i=None, r=None, p=None) -> 'dict(v, i, r, p)':
     """ This is really just a nice implementation of the ohm's law wheel """
     if need(i):
         if have(v, r):
@@ -127,23 +119,18 @@ def ohmsLaw(v=None, i=None, r=None, p=None) -> 'dict(v, i, r, p)':
     }
 
 
-
-# These each solve for a single axis at a time
-motionEquations = [
-    "Eq(velocity_x, initalVelocity_x - acceleration_x * time)",
-    "Eq(velocity_y, initalVelocity_y - acceleration_y * time)",
-    "Eq(position_x, initialPosition_x + initialVelocity_x * time - (1/2)*acceleration_x*(time**2))",
-    "Eq(position_y, initialPosition_y + initialVelocity_y * time - (1/2)*acceleration_y*(time**2))",
-    "Eq(velocity_x, sqrt((initialVelocity_x**2) - 2 * acceleration_x * (position_x-initialPosition_x)))",
-    "Eq(velocity_y, sqrt((initialVelocity_y**2) - 2 * acceleration_y * (position_y-initialPosition_y)))",
-]
-
-miscEquations = [
-    'Eq(angularSpeed, deltaAngle/deltaTime)',
-    'Eq(angularAcceleration, deltaAngSpeed/deltaTime)'
-]
+def ohmsLaw(v=None, i=None, r=None) -> 'The one not specified':
+    if have(v, r) and need(i):
+        return v/r
+    elif have(i, r) and need(v):
+        return i*r
+    elif have(v, i) and need(r):
+        return v/i
+    else:
+        raise TypeError(f"Wrong number of parameters, bub")
 
 # Solves for a single axis at a time
+@depricated
 def solveMotion(**args):
     """
         Allowed Parameters:
@@ -169,6 +156,22 @@ def solveMotion(**args):
         'initalPosition': initialPosition
         # 'gravity': gravity
     }
+
+
+#* Equations
+motionEquations = [
+    "Eq(velocity_x, initialVelocity_x - acceleration_x * time)",
+    "Eq(velocity_y, initialVelocity_y - acceleration_y * time)",
+    "Eq(position_x, initialPosition_x + initialVelocity_x * time - (1/2)*acceleration_x*(time**2))",
+    "Eq(position_y, initialPosition_y + initialVelocity_y * time - (1/2)*acceleration_y*(time**2))",
+    "Eq(velocity_x, sqrt((initialVelocity_x**2) - 2 * acceleration_x * (position_x-initialPosition_x)))",
+    "Eq(velocity_y, sqrt((initialVelocity_y**2) - 2 * acceleration_y * (position_y-initialPosition_y)))",
+]
+
+miscEquations = [
+    'Eq(angularSpeed, deltaAngle/deltaTime)',
+    'Eq(angularAcceleration, deltaAngSpeed/deltaTime)'
+]
 
 masterSolveParams = [
     "voltage",
@@ -200,11 +203,10 @@ masterSolveParams = [
     'R2',
     'isVoltageDivider'
 ]
-
 # Don't input these
 masterSolveOutputParams = [
-    "initalVelocity_x",
-    "initalVelocity_y",
+    "initialVelocity_x",
+    "initialVelocity_y",
     "position_x",
     "position_y",
     "initialPosition_x",
@@ -294,8 +296,8 @@ def masterSolve(maxIterations = 1, __iterations=0, **v) -> "dict(solved paramete
     # Now add the axis specific parameters
     # NOTE -- These get reset every iteration
     # Use getattr so it doesn't throw an error
-    v['initalVelocity_x'] = getattr(v['initalVelocity'], 'x', None)
-    v['initalVelocity_y'] = getattr(v['initalVelocity'], 'y', None)
+    v['initialVelocity_x'] = getattr(v['initialVelocity'], 'x', None)
+    v['initialVelocity_y'] = getattr(v['initialVelocity'], 'y', None)
     v['position_x'] = getattr(v['position'], 'x', None)
     v['position_y'] = getattr(v['position'], 'y', None)
     v['initialPosition_x'] = getattr(v['initialPosition'], 'x', None)
@@ -308,11 +310,11 @@ def masterSolve(maxIterations = 1, __iterations=0, **v) -> "dict(solved paramete
 
     #* Done idiot proofing, now actually solve stuff
     # First, electrical equations
-    # v.update(ohmsLaw(v=v['voltage'], i=v['current'], r=v['resistance'], p=v['power']))
+    v.update(solveOhmsLaw(v=v['voltage'], i=v['current'], r=v['resistance'], p=v['power']))
     if v['isVoltageDivider']:
         v['middleVoltage'] = (v['voltage'] * v['R2']) / (v['R1'] + v['R2'])
 
-    ohmsLawAnswers = ohmsLaw(v=v['voltage'], i=v['current'], r=v['resistance'], p=v['power'])
+    ohmsLawAnswers = solveOhmsLaw(v=v['voltage'], i=v['current'], r=v['resistance'], p=v['power'])
     # v['voltage'] = ohmsLawAnswers['v']
     # v['current'] = ohmsLawAnswers['i']
     # v['resistance'] = ohmsLawAnswers['r']
@@ -346,5 +348,31 @@ ll = parallel
 scinot.start(4, 3)
 
 specialSymbols = '≈θ𝜙°Ω±𝛼𝚫𝜔'
+# gravity = Vector2D(9.8, 270, False)
+gravity = Vector2D.fromxy(0, 9.8)
+debug(masterSolve(acceleration=gravity, initialVelocity=Vector2D(90, 30, False), initialPosition=Point2D(0, 10), time=3))
 
-debug(masterSolve(acceleration=Vector2D(0, 9.8), initialVelocity=Vector2D(90, 30, False), initialPosition=Point2D(0, 10), time=3))
+
+# grandpa satan
+# barage corbin with genuine complements
+# soda + salad packet + warmslough
+# berlin wall
+# chaperone on shopping trips
+
+
+# def node(input)
+
+# def findI()
+
+# def something(inVCs, outVCs):
+
+
+# Wire = namedtuple('Wire', 'v, i, r')
+# Node = namedtuple('Node', 'in, out')
+
+# Node((Wire(v=15, r=0),), (Wire()))
+
+
+# def volts(inVs, outVs, inR, outR):
+
+# def current(inVCs, outVCs):
