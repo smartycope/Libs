@@ -350,7 +350,7 @@ scinot.start(4, 3)
 specialSymbols = '≈θ𝜙°Ω±𝛼𝚫𝜔'
 # gravity = Vector2D(9.8, 270, False)
 gravity = Vector2D.fromxy(0, 9.8)
-debug(masterSolve(acceleration=gravity, initialVelocity=Vector2D(90, 30, False), initialPosition=Point2D(0, 10), time=3))
+# debug(masterSolve(acceleration=gravity, initialVelocity=Vector2D(90, 30, False), initialPosition=Point2D(0, 10), time=3))
 
 
 # grandpa satan
@@ -376,3 +376,22 @@ debug(masterSolve(acceleration=gravity, initialVelocity=Vector2D(90, 30, False),
 # def volts(inVs, outVs, inR, outR):
 
 # def current(inVCs, outVCs):
+
+class Resistor:
+    def __init__(self, resistance):
+        self.r = resistance
+
+class Node:
+    def __init__(self, inVoltages=None, outVoltages=None, inCurrents=None, outCurrents=None, inResistors=None, outResistors=None):
+        self.inVoltages = inVoltages
+        self.outVoltages = outVoltages
+        self.inCurrents = inCurrents
+        self.outCurrents = outCurrents
+        self.inResistors = inResistors
+        self.outResistors = outResistors
+
+    def current(self):
+
+
+def currentAtNode(*voltages):
+    return ohmsLaw(v=Eq(sum(voltages), 0), )
