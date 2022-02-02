@@ -53,6 +53,7 @@ __copyright__ = '(c) 2021, Copeland Carter'
 #todo make tested/untested their own functions (similar, but not the same as confidence)
 #? importpath works, but it could use some fine tuning
 #todo tested and untested don't give the right metadata (cause they're called somewhere else)
+#todo finish MultiDict
 
 
 ################################### Imports ###################################
@@ -2462,6 +2463,36 @@ class ZerosDict(dict):
             return super().__getitem__(key)
         else:
             return None
+
+
+class MultiAccessDict(dict):
+    """ Exactly the same thing as a regular dict, except you can get and set multiple items
+        at once, and it returns a list of the asked for items, or sets all of the items to
+        the specified value
+    """
+    def __getitem__(self, *keys):
+        if len(keys) == 0:
+            raise KeyError(f"No input parameters given")
+        return [super().__getitem__(key) for key in keys]
+
+    def __setitem__(self, *keys, value):
+        todo('figure out how the setitem parameters work')
+    #     return [super().__setitem__(key) for key in keys]
+
+class ZerosMultiAccessDict(ZerosDict):
+    """ A combonation of a ZerosDict and a MultiAccessDict """
+    def __getitem__(self, keys):
+        if len(keys) == 0:
+            raise KeyError(f"No input parameters given")
+        rtn = []
+        if not isiterable(keys):
+            return super().__getitem__(keys)
+        else:
+            for key in keys:
+                rtn.append(super().__getitem__(key))
+            return ensureNotIterable(rtn)
+
+
 
 ################################### Misc. Useful Functions ###################################
 struct = namedtuple # I'm used to C

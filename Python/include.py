@@ -1,6 +1,8 @@
 from Cope import *
 import EasyRegex as er
-import re, math, os
+import re
+import math
+import os
 from os.path import dirname, join
 import clipboard as clip
 from clipboard import copy, paste
@@ -22,17 +24,31 @@ import sys
 from collections import *
 
 # This SHOULD be in Cope.py, but it wont work there. Not sure why.
+
+
 def importpath(path, name, moduleName):
     spec = importutil.spec_from_file_location(name, path)
     module = importutil.module_from_spec(spec)
     sys.modules[spec.name] = module
     spec.loader.exec_module(module)
     # This is kinda ugly and nasty, but it works. For now.
-    globals()[moduleName] = importlib.import_module(name, moduleName).__getattribute__(moduleName)
+    globals()[moduleName] = importlib.import_module(
+        name, moduleName).__getattribute__(moduleName)
 
-importpath(HOME + "/hello/python/MathTranspiler/src/Vector.py", "Vector", "Vector2D")
-importpath(HOME + "/hello/python/MathTranspiler/src/Particle.py", "Particle", "Particle2D")
+
+importpath(HOME + "/hello/python/MathTranspiler/src/Vector.py",
+           "Vector", "Vector2D")
+importpath(HOME + "/hello/python/MathTranspiler/src/Particle.py",
+           "Particle", "Particle2D")
 # importpath("~/hello/python/MathTranspiler/src/MainWindow/_customFuncs", "*")
+
+
+class MasterSolveDict(ZerosMultiAccessDict):
+    """ A combonation of a ZerosDict and a MultiAccessDict """
+
+    def __getitem__(self, keys):
+        return MasterSolveDict(zip(keys, ensureIterable(super().__getitem__(keys))))
+
 
 # returns true if all of the parameters are not None
 def have(*obj):
@@ -42,6 +58,8 @@ def have(*obj):
             yes = False
     return yes
 # returns true if all of the parameters are None
+
+
 def need(*obj):
     yes = True
     for i in obj:
@@ -49,6 +67,8 @@ def need(*obj):
             yes = False
     return yes
 # returns true if there's no more than 1 None parameter
+
+
 def involves(*obj):
     unknowns = 0
     for i in obj:
@@ -56,11 +76,21 @@ def involves(*obj):
             unknowns += 1
     return unknowns <= 1
 # returns the only parameter equal to None (or None if there are more or less than 1)
-def unknown(d:dict, *obj:str):
-    if Counter(d.values())[None] != 1:
+
+
+def unknown(d: dict, *obj: str):
+    # if Counter(d.values())[None] != 1:
+    count = 0
+    for key in obj:
+        if d[key] is None:
+            count += 1
+            thing = key
+    if count != 1:
         return None
     else:
-        return invertDict(d)[None]
+        return thing
+        # return debug(invertDict(d)[None], clr=2)
+        # return
 
 
 def parallel(*resistors):
@@ -69,8 +99,10 @@ def parallel(*resistors):
         bottom += 1/r
     return 1/bottom
 
+
 def series(*resistors):
     return sum(resistors)
+
 
 def voltDivider(inVoltage, r1, r2) -> 'voltage in the middle':
     return (inVoltage * r2) / (r1 + r2)
@@ -115,7 +147,7 @@ def solveOhmsLaw(v=None, i=None, r=None, p=None) -> 'dict(v, i, r, p)':
         'v': v,
         'i': i,
         'r': r,
-        'p':p
+        'p': p
     }
 
 
@@ -130,6 +162,8 @@ def ohmsLaw(v=None, i=None, r=None) -> 'The one not specified':
         raise TypeError(f"Wrong number of parameters, bub")
 
 # Solves for a single axis at a time
+
+
 @depricated
 def solveMotion(**args):
     """
@@ -158,7 +192,7 @@ def solveMotion(**args):
     }
 
 
-#* Equations
+# * Equations
 motionEquations = [
     "Eq(velocity_x, initialVelocity_x - acceleration_x * time)",
     "Eq(velocity_y, initialVelocity_y - acceleration_y * time)",
@@ -170,7 +204,9 @@ motionEquations = [
 
 miscEquations = [
     'Eq(angularSpeed, deltaAngle/deltaTime)',
-    'Eq(angularAcceleration, deltaAngSpeed/deltaTime)'
+    'Eq(angularAcceleration, deltaAngSpeed/deltaTime)',
+    # 'Eq(mass, 2*time)',
+    # 'Eq(theta, mass*time)',
 ]
 
 masterSolveParams = [
@@ -201,7 +237,9 @@ masterSolveParams = [
     "deltaTime",
     "R1",
     'R2',
-    'isVoltageDivider'
+    'isVoltageDivider',
+    'force',
+    'mass'
 ]
 # Don't input these
 masterSolveOutputParams = [
@@ -252,13 +290,16 @@ masterSolvePsuedonyms = {
     'isVoltDivider': 'isVoltageDivider',
 }
 
-def masterSolve(maxIterations = 1, __iterations=0, **v) -> "dict(solved parameters)":
-    # This just makes it so if I try to get a key that doesn't exist, it gives None instead of an error
-    v = ZerosDict(v)
 
-    #* To make this as idiot-proof as possible
+def masterSolve(maxIterations=1, __iteration=1, **v) -> "dict(solved parameters)":
+    debug(__iteration, clr=3)
+    # This just makes it so if I try to get a key that doesn't exist, it gives None instead of an error
+    # And multiAccess becaues I want to be able to get multiple values from it
+    v = ZerosMultiAccessDict(v)
+
+    # * To make this as idiot-proof as possible
     # Make sure the parameters are valid, but only when the user is inputting them
-    if __iterations == 0:
+    if __iteration == 0:
         for key in v.keys():
             if key not in masterSolveParams + list(masterSolvePsuedonyms.keys()):
                 raise TypeError(f"Invalid parameter {key}")
@@ -270,30 +311,39 @@ def masterSolve(maxIterations = 1, __iterations=0, **v) -> "dict(solved paramete
         elif have(psuedo) and need(key):
             v[key] = v[psuedo]
 
-
     # Make sure we have the right types
     NoneType = type(None)
     vector = (NoneType, Vector2D)
-    number = (NoneType, float, int, SupportsInt, Symbol, Expr)
-    point  = (NoneType, Point2D)
-    boolean= (NoneType, bool)
+    number = (NoneType, float, int, SupportsInt,
+              Symbol, Expr, Integer, Float, Rational)
+    point = (NoneType, Point2D)
+    boolean = (NoneType, bool)
+
+    # Make sure everything is a sympy type, unless its a Vector2D or a bool
+    newv = v
+    for key, val in v.items():
+        if type(val) in number:
+            newv[key] = sympify(ensureNotIterable(val, None))
+    v = newv
+
     for i in masterSolveParams:
-        def throw():
-            raise TypeError(f"Parameter {i} has invalid value of {v[i]}. (Expected {point}, got {type(v[i])}")
+        def throw(param, value, expectType, type):
+            raise TypeError(
+                f"Parameter {param} has invalid value of {value}. (Expected {expectType}, got {type}")
 
         if i in ('position', 'initialPosition', 'displacement', 'distance'):
             if type(v[i]) not in point:
-                throw()
+                throw(i, v[i], point, type(v[i]))
         elif i in ('velocity', 'initialVelocity', 'acceleration'):
             if type(v[i]) not in vector:
-                throw()
+                throw(i, v[i], vector, type(v[i]))
         elif i in ('isVoltageDivider',):
             if type(v[i]) not in boolean:
-                throw()
+                throw(i, v[i], boolean, type(v[i]))
         elif type(v[i]) not in number:
-            throw()
+            throw(i, v[i], number, type(v[i]))
 
-    # Now add the axis specific parameters
+    # Split up the axis parameters
     # NOTE -- These get reset every iteration
     # Use getattr so it doesn't throw an error
     v['initialVelocity_x'] = getattr(v['initialVelocity'], 'x', None)
@@ -306,15 +356,18 @@ def masterSolve(maxIterations = 1, __iterations=0, **v) -> "dict(solved paramete
     v['acceleration_y'] = getattr(v['acceleration'], 'y', None)
     v['velocity_x'] = getattr(v['velocity'], 'x', None)
     v['velocity_y'] = getattr(v['velocity'], 'y', None)
+    v['force_x'] = getattr(v['force'], 'x', None)
+    v['force_y'] = getattr(v['force'], 'y', None)
 
-
-    #* Done idiot proofing, now actually solve stuff
+    # * Done idiot proofing, now actually solve stuff
     # First, electrical equations
-    v.update(solveOhmsLaw(v=v['voltage'], i=v['current'], r=v['resistance'], p=v['power']))
+    v.update(solveOhmsLaw(v=v['voltage'],
+                          i=v['current'], r=v['resistance'], p=v['power']))
     if v['isVoltageDivider']:
         v['middleVoltage'] = (v['voltage'] * v['R2']) / (v['R1'] + v['R2'])
 
-    ohmsLawAnswers = solveOhmsLaw(v=v['voltage'], i=v['current'], r=v['resistance'], p=v['power'])
+    ohmsLawAnswers = solveOhmsLaw(
+        v=v['voltage'], i=v['current'], r=v['resistance'], p=v['power'])
     # v['voltage'] = ohmsLawAnswers['v']
     # v['current'] = ohmsLawAnswers['i']
     # v['resistance'] = ohmsLawAnswers['r']
@@ -325,21 +378,61 @@ def masterSolve(maxIterations = 1, __iterations=0, **v) -> "dict(solved paramete
 
     # Solve the equations for the missing value, if we can
     for equation in miscEquations + motionEquations:
-        try:
-            eq = parse_expr(equation)
-        except:
-            raise SyntaxError(f"Error parsing equation '{equation}'")
+        # try:
+        # This is a hack, but I just want it to work.
+        # Instead use eq.subs
+        # for key, value in v.items():
+        #     if value is not None:
+        #         equation = equation.replace(key, str(value))
+        eq = parse_expr(equation)
+        # Make a new dict exactly the same as v, but instead of the keys being strings they're Symbols of those strings
+        subv = {}
+        for key, val in v.items():
+            if type(val) in number:
+                subv[Symbol(key)] = val
+        eq.subs(subv)
+        # except:
+        # raise SyntaxError(f"Error parsing equation '{equation}'")
         u = unknown(v, *[a.name for a in eq.atoms(Symbol)])
+        # debug(u)
         if u:
-            v[u] = solve(eq, v[u])
+            v[u] = ensureNotIterable(solve(eq, Symbol(u)), None)
+            if v[u] is None:
+                debug(f'Unable to solve {eq} for {u}', clr=Colors.ALERT)
 
-    if __iterations <= maxIterations:
-        masterSolve(maxIterations=maxIterations, __iterations=__iterations + 1, **v)
+    # Recombine the axis parameters
+    # NOTE -- These get reset every iteration
+    if have(v['position_x'], v['position_y']):
+        v['position'] = Point2D(v['position_x'], v['position_y'])
+    if have(v['initialPosition_x'], v['initialPosition_y']):
+        v['initialPosition'] = Point2D(
+            v['initialPosition_x'], v['initialPosition_y'])
+    if have(v['initialVelocity_x'], v['initialVelocity_y']):
+        v['initialVelocity'] = Vector2D.fromxy(
+            v['initialVelocity_x'], v['initialVelocity_y'])
+    if have(v['velocity_x'], v['velocity_y']):
+        v['velocity'] = Vector2D.fromxy(v['velocity_x'], v['velocity_y'])
+    if have(v['acceleration_x'], v['acceleration_y']):
+        v['acceleration'] = Vector2D.fromxy(
+            v['acceleration_x'], v['acceleration_y'])
+    if have(v['force_x'], v['force_y']):
+        v['force'] = Vector2D.fromxy(v['force_x'], v['force_y'])
+
+    # Sync psuedonyms
+    for psuedo, key in masterSolvePsuedonyms.items():
+        if have(key) and need(psuedo):
+            v[psuedo] = v[key]
+        elif have(psuedo) and need(key):
+            v[key] = v[psuedo]
+
+    if __iteration < maxIterations:
+        masterSolve(maxIterations=maxIterations,
+                    __iteration=__iteration + 1, **v)
 
     return v
 
-masterSolve.__doc__ = 'Valid Parameters are: ' + '\n'.join(masterSolveParams)
 
+masterSolve.__doc__ = 'Valid Parameters are: ' + '\n'.join(masterSolveParams)
 
 
 s = series
@@ -352,13 +445,13 @@ specialSymbols = '≈θ𝜙°Ω±𝛼𝚫𝜔'
 gravity = Vector2D.fromxy(0, 9.8)
 # debug(masterSolve(acceleration=gravity, initialVelocity=Vector2D(90, 30, False), initialPosition=Point2D(0, 10), time=3))
 
-
-# grandpa satan
-# barage corbin with genuine complements
-# soda + salad packet + warmslough
-# berlin wall
-# chaperone on shopping trips
-
+# debug(masterSolve(time=.2, acceleration=gravity, initialPosition=Point2D(0, 0))['position', 'a', 'time', 'velocity'])
+debug(masterSolve(time=.2, acceleration=gravity, initialPosition=Point2D(0, 0)))
+# 'Eq(mass, 2*time)',
+# 'Eq(theta, mass*time)',
+# debug(masterSolve(mass=4))
+# debug(masterSolve(mass=4)['mass'])
+# debug(masterSolve(mass=4)['mass', 'time'])
 
 # def node(input)
 
@@ -375,11 +468,15 @@ gravity = Vector2D.fromxy(0, 9.8)
 
 # def volts(inVs, outVs, inR, outR):
 
+todo('If a class inherits from 2 parent classes which both implement a function, and that function is called, which function gets called?', enabled=False)
+
+
 # def current(inVCs, outVCs):
 
 class Resistor:
     def __init__(self, resistance):
         self.r = resistance
+
 
 class Node:
     def __init__(self, inVoltages=None, outVoltages=None, inCurrents=None, outCurrents=None, inResistors=None, outResistors=None):
@@ -390,8 +487,17 @@ class Node:
         self.inResistors = inResistors
         self.outResistors = outResistors
 
-    def current(self):
+    # def current(self):
 
 
-def currentAtNode(*voltages):
-    return ohmsLaw(v=Eq(sum(voltages), 0), )
+# ElectricalPart
+
+
+# PowerSupply
+# Resistor
+# Node
+# connections =
+
+
+# def currentAtNode(*voltages):
+#     return ohmsLaw(v=Eq(sum(voltages), 0), )
