@@ -192,6 +192,7 @@ def solveMotion(**args):
     }
 
 
+todo('add vectors to masterSolve', enabled=False)
 # * Equations
 motionEquations = [
     "Eq(velocity_x, initialVelocity_x - acceleration_x * time)",
@@ -291,7 +292,7 @@ masterSolvePsuedonyms = {
 }
 
 
-def masterSolve(maxIterations=1, __iteration=1, **v) -> "dict(solved parameters)":
+def masterSolve(maxIterations=2, __iteration=1, **v) -> "dict(solved parameters)":
     debug(__iteration, clr=3)
     # This just makes it so if I try to get a key that doesn't exist, it gives None instead of an error
     # And multiAccess becaues I want to be able to get multiple values from it
@@ -346,35 +347,41 @@ def masterSolve(maxIterations=1, __iteration=1, **v) -> "dict(solved parameters)
     # Split up the axis parameters
     # NOTE -- These get reset every iteration
     # Use getattr so it doesn't throw an error
-    v['initialVelocity_x'] = getattr(v['initialVelocity'], 'x', None)
-    v['initialVelocity_y'] = getattr(v['initialVelocity'], 'y', None)
-    v['position_x'] = getattr(v['position'], 'x', None)
-    v['position_y'] = getattr(v['position'], 'y', None)
-    v['initialPosition_x'] = getattr(v['initialPosition'], 'x', None)
-    v['initialPosition_y'] = getattr(v['initialPosition'], 'y', None)
-    v['acceleration_x'] = getattr(v['acceleration'], 'x', None)
-    v['acceleration_y'] = getattr(v['acceleration'], 'y', None)
-    v['velocity_x'] = getattr(v['velocity'], 'x', None)
-    v['velocity_y'] = getattr(v['velocity'], 'y', None)
-    v['force_x'] = getattr(v['force'], 'x', None)
-    v['force_y'] = getattr(v['force'], 'y', None)
+    if have(v['initialVelocity']):
+        v['initialVelocity_x'] = getattr(v['initialVelocity'], 'x', None)
+        v['initialVelocity_y'] = getattr(v['initialVelocity'], 'y', None)
+    if have(v['position']):
+        v['position_x'] = getattr(v['position'], 'x', None)
+        v['position_y'] = getattr(v['position'], 'y', None)
+    if have(v['initialPosition']):
+        v['initialPosition_x'] = getattr(v['initialPosition'], 'x', None)
+        v['initialPosition_y'] = getattr(v['initialPosition'], 'y', None)
+    if have(v['acceleration']):
+        v['acceleration_x'] = getattr(v['acceleration'], 'x', None)
+        v['acceleration_y'] = getattr(v['acceleration'], 'y', None)
+    if have(v['velocity']):
+        v['velocity_x'] = getattr(v['velocity'], 'x', None)
+        v['velocity_y'] = getattr(v['velocity'], 'y', None)
+    if have(v['force']):
+        v['force_x'] = getattr(v['force'], 'x', None)
+        v['force_y'] = getattr(v['force'], 'y', None)
 
     # * Done idiot proofing, now actually solve stuff
     # First, electrical equations
-    v.update(solveOhmsLaw(v=v['voltage'],
-                          i=v['current'], r=v['resistance'], p=v['power']))
+    # v.update(solveOhmsLaw(v=v['voltage'], i=
+    # v['current'], r=v['resistance'], p=v['power']))
     if v['isVoltageDivider']:
         v['middleVoltage'] = (v['voltage'] * v['R2']) / (v['R1'] + v['R2'])
 
-    ohmsLawAnswers = solveOhmsLaw(
-        v=v['voltage'], i=v['current'], r=v['resistance'], p=v['power'])
-    # v['voltage'] = ohmsLawAnswers['v']
-    # v['current'] = ohmsLawAnswers['i']
-    # v['resistance'] = ohmsLawAnswers['r']
-    # v['power'] = ohmsLawAnswers['p']
-
-    # Take a stab at vector stuff
-    todo('add vectors to masterSolve', enabled=False)
+    ohmsLawAnswers = solveOhmsLaw(v=v['voltage'], i=v['current'], r=v['resistance'], p=v['power'])
+    if have(v['voltage']):
+        v['voltage'] = ohmsLawAnswers['v']
+    if have(v['current']):
+        v['current'] = ohmsLawAnswers['i']
+    if have(v['resistance']):
+        v['resistance'] = ohmsLawAnswers['r']
+    if have(v['power']):
+        v['power'] = ohmsLawAnswers['p']
 
     # Solve the equations for the missing value, if we can
     for equation in miscEquations + motionEquations:
@@ -388,12 +395,14 @@ def masterSolve(maxIterations=1, __iteration=1, **v) -> "dict(solved parameters)
         # Make a new dict exactly the same as v, but instead of the keys being strings they're Symbols of those strings
         subv = {}
         for key, val in v.items():
-            if type(val) in number:
+            if type(val) not in (Point2D, Vector2D):
                 subv[Symbol(key)] = val
-        eq.subs(subv)
+        eq = eq.subs(subv)
+
         # except:
         # raise SyntaxError(f"Error parsing equation '{equation}'")
-        u = unknown(v, *[a.name for a in eq.atoms(Symbol)])
+        atoms = [a.name for a in eq.atoms(Symbol)]
+        u = unknown(v, *atoms)
         # debug(u)
         if u:
             v[u] = ensureNotIterable(solve(eq, Symbol(u)), None)
@@ -431,9 +440,7 @@ def masterSolve(maxIterations=1, __iteration=1, **v) -> "dict(solved parameters)
 
     return v
 
-
 masterSolve.__doc__ = 'Valid Parameters are: ' + '\n'.join(masterSolveParams)
-
 
 s = series
 ll = parallel
@@ -445,8 +452,10 @@ specialSymbols = '≈θ𝜙°Ω±𝛼𝚫𝜔'
 gravity = Vector2D.fromxy(0, 9.8)
 # debug(masterSolve(acceleration=gravity, initialVelocity=Vector2D(90, 30, False), initialPosition=Point2D(0, 10), time=3))
 
+#! Actually test this with practice problems!
+
 # debug(masterSolve(time=.2, acceleration=gravity, initialPosition=Point2D(0, 0))['position', 'a', 'time', 'velocity'])
-debug(masterSolve(time=.2, acceleration=gravity, initialPosition=Point2D(0, 0)))
+# debug(masterSolve(time=.2, acceleration=gravity, initialPosition=Point2D(0, 0)))
 # 'Eq(mass, 2*time)',
 # 'Eq(theta, mass*time)',
 # debug(masterSolve(mass=4))

@@ -51,7 +51,7 @@ __copyright__ = '(c) 2021, Copeland Carter'
 #? Todo as a decorator is called in the global scope instead of when the function is called
 #todo add a log level parameter to debug
 #todo make tested/untested their own functions (similar, but not the same as confidence)
-#? importpath works, but it could use some fine tuning
+#? importpath works, but it could use some fine tuning -- just kidding, doesn't work outside of Cope.py
 #todo tested and untested don't give the right metadata (cause they're called somewhere else)
 #todo finish MultiDict
 
