@@ -161,6 +161,19 @@ def ohmsLaw(v=None, i=None, r=None) -> 'The one not specified':
     else:
         raise TypeError(f"Wrong number of parameters, bub")
 
+
+
+def newtonsLaw(f=None, m=None, a=None) -> 'The one not specified':
+    # F = ma
+    if have(f, m) and need(a):
+        return f/m
+    elif have(m, a) and need(f):
+        return m*a
+    elif have(f, a) and need(m):
+        return f/a
+    else:
+        raise TypeError(f"Wrong number of parameters, bub")
+
 # Solves for a single axis at a time
 
 
@@ -193,19 +206,27 @@ def solveMotion(**args):
 
 
 todo('add vectors to masterSolve', enabled=False)
-# * Equations
-motionEquations = [
+allEquations = [
+    # angular motion
+    'Eq(angularSpeed, deltaAngle/deltaTime)',
+    'Eq(angularAcceleration, deltaAngSpeed/deltaTime)',
+    # newtons laws
+    'Eq(netForce_x, mass * acceleration_x',
+    'Eq(netForce_y, mass * acceleration_y',
+    'Eq(weight, mass * acceleration_y)',
+    'Eq(drag_x, -b * velocity_x)',
+    'Eq(drag_y, -b * velocity_y)',
+
+    # friction
+    # What the heck is f_smax???
+    # 'Eq(f_smax, staticFriction * netForce) ',
+    # Motion equations
     "Eq(velocity_x, initialVelocity_x - acceleration_x * time)",
     "Eq(velocity_y, initialVelocity_y - acceleration_y * time)",
     "Eq(position_x, initialPosition_x + initialVelocity_x * time - (1/2)*acceleration_x*(time**2))",
     "Eq(position_y, initialPosition_y + initialVelocity_y * time - (1/2)*acceleration_y*(time**2))",
     "Eq(velocity_x, sqrt((initialVelocity_x**2) - 2 * acceleration_x * (position_x-initialPosition_x)))",
     "Eq(velocity_y, sqrt((initialVelocity_y**2) - 2 * acceleration_y * (position_y-initialPosition_y)))",
-]
-
-miscEquations = [
-    'Eq(angularSpeed, deltaAngle/deltaTime)',
-    'Eq(angularAcceleration, deltaAngSpeed/deltaTime)',
     # 'Eq(mass, 2*time)',
     # 'Eq(theta, mass*time)',
 ]
@@ -239,8 +260,13 @@ masterSolveParams = [
     "R1",
     'R2',
     'isVoltageDivider',
-    'force',
-    'mass'
+    # 'force',
+    'netForce',
+    'mass',
+    'weight',
+    'friction',
+    'keneticFriction',
+    'drag',
 ]
 # Don't input these
 masterSolveOutputParams = [
@@ -254,6 +280,10 @@ masterSolveOutputParams = [
     "acceleration_y",
     "velocity_x",
     "velocity_y",
+    'netForce_x',
+    'netForce_y',
+    'drag_x',
+    'drag_y',
 ]
 
 masterSolvePsuedonyms = {
@@ -289,8 +319,15 @@ masterSolvePsuedonyms = {
     'pos': 'position',
     'initPos': 'initialPosition',
     'isVoltDivider': 'isVoltageDivider',
+    'F': 'netForce',
+    'µ': 'staticFriction',
+    'mu': 'staticFriction',
+    'friction': 'staticFriction'
 }
 
+vectorParams = ('velocity', 'initialVelocity', 'acceleration', 'netForce', 'drag')
+pointParams = ('position', 'initialPosition', 'displacement', 'distance')
+boolParams = ('isVoltageDivider',)
 
 def masterSolve(maxIterations=2, __iteration=1, **v) -> "dict(solved parameters)":
     debug(__iteration, clr=3)
@@ -324,7 +361,7 @@ def masterSolve(maxIterations=2, __iteration=1, **v) -> "dict(solved parameters)
     newv = v
     for key, val in v.items():
         if type(val) in number:
-            newv[key] = sympify(ensureNotIterable(val, None))
+            newv[key] = sympify(val)
     v = newv
 
     for i in masterSolveParams:
@@ -332,13 +369,13 @@ def masterSolve(maxIterations=2, __iteration=1, **v) -> "dict(solved parameters)
             raise TypeError(
                 f"Parameter {param} has invalid value of {value}. (Expected {expectType}, got {type}")
 
-        if i in ('position', 'initialPosition', 'displacement', 'distance'):
+        if i in pointParams:
             if type(v[i]) not in point:
                 throw(i, v[i], point, type(v[i]))
-        elif i in ('velocity', 'initialVelocity', 'acceleration'):
+        elif i in vectorParams:
             if type(v[i]) not in vector:
                 throw(i, v[i], vector, type(v[i]))
-        elif i in ('isVoltageDivider',):
+        elif i in boolParams:
             if type(v[i]) not in boolean:
                 throw(i, v[i], boolean, type(v[i]))
         elif type(v[i]) not in number:
@@ -362,9 +399,9 @@ def masterSolve(maxIterations=2, __iteration=1, **v) -> "dict(solved parameters)
     if have(v['velocity']):
         v['velocity_x'] = getattr(v['velocity'], 'x', None)
         v['velocity_y'] = getattr(v['velocity'], 'y', None)
-    if have(v['force']):
-        v['force_x'] = getattr(v['force'], 'x', None)
-        v['force_y'] = getattr(v['force'], 'y', None)
+    if have(v['netForce']):
+        v['netForce_x'] = getattr(v['netForce'], 'x', None)
+        v['netForce_y'] = getattr(v['netForce'], 'y', None)
 
     # * Done idiot proofing, now actually solve stuff
     # First, electrical equations
@@ -384,7 +421,7 @@ def masterSolve(maxIterations=2, __iteration=1, **v) -> "dict(solved parameters)
         v['power'] = ohmsLawAnswers['p']
 
     # Solve the equations for the missing value, if we can
-    for equation in miscEquations + motionEquations:
+    for equation in allEquations:
         # try:
         # This is a hack, but I just want it to work.
         # Instead use eq.subs
@@ -424,8 +461,8 @@ def masterSolve(maxIterations=2, __iteration=1, **v) -> "dict(solved parameters)
     if have(v['acceleration_x'], v['acceleration_y']):
         v['acceleration'] = Vector2D.fromxy(
             v['acceleration_x'], v['acceleration_y'])
-    if have(v['force_x'], v['force_y']):
-        v['force'] = Vector2D.fromxy(v['force_x'], v['force_y'])
+    if have(v['netForce_x'], v['netForce_y']):
+        v['netForce'] = Vector2D.fromxy(v['netForce_x'], v['netForce_y'])
 
     # Sync psuedonyms
     for psuedo, key in masterSolvePsuedonyms.items():
@@ -510,3 +547,17 @@ class Node:
 
 # def currentAtNode(*voltages):
 #     return ohmsLaw(v=Eq(sum(voltages), 0), )
+
+
+>>> vs1=24; vs2=12; R1=110; R2=270; R3=560
+
+i1Equ = Eq(-ohmsLaw(r=R1, i=i1) - ohmsLaw(r=R2, i=i1 - i2), -vs1)
+i2Equ = Eq-(vs2, -ohmsLaw(r=R2, i=i2 - i1) - ohmsLaw(r=R3, i=i2))
+i1Solved = ensureNotIterable(solve(i1Equ, i1))
+i2Solved = ensureNotIterable(solve(i2Equ, i2))
+i2Solved.subs(i1, i1Solved)
+i1Solved.subs(i2, i2Solved)
+solve(i1Solved.subs(i2, i2Solved), i1)
+solve(i2Solved.subs(i1, i1Solved), i2)
+solve(i1Solved.subs(i2, i2Solved), i1)[0].evalf()
+solve(i2Solved.subs(i1, i1Solved), i2)[0].evalf()
