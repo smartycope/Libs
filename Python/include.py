@@ -108,6 +108,18 @@ def voltDivider(inVoltage, r1, r2) -> 'voltage in the middle':
     return (inVoltage * r2) / (r1 + r2)
 
 
+def currentThroughParallelResistors(current, *resistors):
+    totalR = parallel(*resistors)
+    return [((totalR / r) * current) for r in resistors]
+
+'''
+def currentThroughParallelResistors(current, r1, r2):
+    totalR = parallel(r1, r2)
+    i1 = (totalR /r1) * current
+    i2 = (totalR /r2) * current
+    return (i1, i2)
+'''
+
 # masterSolve Functions
 def solveOhmsLaw(v=None, i=None, r=None, p=None) -> 'dict(v, i, r, p)':
     """ This is really just a nice implementation of the ohm's law wheel """
@@ -324,6 +336,7 @@ masterSolvePsuedonyms = {
     'mu': 'staticFriction',
     'friction': 'staticFriction'
 }
+
 
 vectorParams = ('velocity', 'initialVelocity', 'acceleration', 'netForce', 'drag')
 pointParams = ('position', 'initialPosition', 'displacement', 'distance')
@@ -549,15 +562,15 @@ class Node:
 #     return ohmsLaw(v=Eq(sum(voltages), 0), )
 
 
->>> vs1=24; vs2=12; R1=110; R2=270; R3=560
+# vs1=24; vs2=12; R1=110; R2=270; R3=560
 
-i1Equ = Eq(-ohmsLaw(r=R1, i=i1) - ohmsLaw(r=R2, i=i1 - i2), -vs1)
-i2Equ = Eq-(vs2, -ohmsLaw(r=R2, i=i2 - i1) - ohmsLaw(r=R3, i=i2))
-i1Solved = ensureNotIterable(solve(i1Equ, i1))
-i2Solved = ensureNotIterable(solve(i2Equ, i2))
-i2Solved.subs(i1, i1Solved)
-i1Solved.subs(i2, i2Solved)
-solve(i1Solved.subs(i2, i2Solved), i1)
-solve(i2Solved.subs(i1, i1Solved), i2)
-solve(i1Solved.subs(i2, i2Solved), i1)[0].evalf()
-solve(i2Solved.subs(i1, i1Solved), i2)[0].evalf()
+# i1Equ = Eq(-ohmsLaw(r=R1, i=i1) - ohmsLaw(r=R2, i=i1 - i2), -vs1)
+# i2Equ = Eq-(vs2, -ohmsLaw(r=R2, i=i2 - i1) - ohmsLaw(r=R3, i=i2))
+# i1Solved = ensureNotIterable(solve(i1Equ, i1))
+# i2Solved = ensureNotIterable(solve(i2Equ, i2))
+# i2Solved.subs(i1, i1Solved)
+# i1Solved.subs(i2, i2Solved)
+# solve(i1Solved.subs(i2, i2Solved), i1)
+# solve(i2Solved.subs(i1, i1Solved), i2)
+# solve(i1Solved.subs(i2, i2Solved), i1)[0].evalf()
+# solve(i2Solved.subs(i1, i1Solved), i2)[0].evalf()

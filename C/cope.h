@@ -1,6 +1,9 @@
 #ifndef __COPE__
 #define __COPE__
 
+#ifdef ENERGIA
+#include "Energia.h"
+#endif
 
 // This file doesn't currently work, I don't think
 
