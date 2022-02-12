@@ -22,6 +22,7 @@ import sympy.physics.units as _units
 from sympy.physics.units.prefixes import Prefix
 import sys
 from collections import *
+from sympy.core.evalf import N as evalf
 
 # This SHOULD be in Cope.py, but it wont work there. Not sure why.
 
@@ -585,8 +586,8 @@ class Node:
 # solve(i1Solved.subs(i2, i2Solved), i1)[0].evalf()
 # solve(i2Solved.subs(i1, i1Solved), i2)[0].evalf()
 
-box = Particle2D(20)
-box.addForce(Vector2D(var('F1'), LEFT))
-box.addForce(Vector2D(30, rad(30)))
-box.addForce(Vector2D(var('F2'), rad(-22)))
-box.showDiagram('box diagram')
+# box = Particle2D(20)
+# box.addForce(Vector2D(var('F1'), LEFT))
+# box.addForce(Vector2D(30, rad(30)))
+# box.addForce(Vector2D(var('F2'), rad(-22)))
+# box.copyDiagram('box diagram')
