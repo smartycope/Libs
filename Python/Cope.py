@@ -972,6 +972,15 @@ def reprise(obj, *args, **kwargs):
 def isiterable(obj, includeStr=False):
     return isinstance(obj, Iterable) and (type(obj) is not str if not includeStr else True)
 
+def isnumber(obj):
+    # return isinstance(obj, (int, float))
+    try:
+        float(obj)
+    except:
+        return False
+    else:
+        return True
+
 def ensureIterable(obj, useList=False):
     if not isiterable(obj):
         return [obj, ] if useList else (obj, )

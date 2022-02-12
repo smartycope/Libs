@@ -8,9 +8,9 @@ import clipboard as clip
 from clipboard import copy, paste
 import scinot
 from sympy.physics.units import *
+from sympy.abc import *
 from sympy import *
 from sympy import abc
-from sympy.abc import *
 from sympy.calculus.util import continuous_domain
 from sympy.core.function import AppliedUndef, UndefinedFunction
 from sympy.parsing.latex import parse_latex
@@ -35,6 +35,10 @@ def importpath(path, name, moduleName):
     globals()[moduleName] = importlib.import_module(
         name, moduleName).__getattribute__(moduleName)
 
+# Ugh...
+# home = os.path.expanduser("~")
+# font = ImageFont.truetype(home+"/pyfreebody.ttf", 20)
+# fontTag = ImageFont.truetype(home+"/pyfreebody.ttf", 12)
 
 importpath(HOME + "/hello/python/MathTranspiler/src/Vector.py",
            "Vector", "Vector2D")
@@ -580,3 +584,9 @@ class Node:
 # solve(i2Solved.subs(i1, i1Solved), i2)
 # solve(i1Solved.subs(i2, i2Solved), i1)[0].evalf()
 # solve(i2Solved.subs(i1, i1Solved), i2)[0].evalf()
+
+box = Particle2D(20)
+box.addForce(Vector2D(var('F1'), LEFT))
+box.addForce(Vector2D(30, rad(30)))
+box.addForce(Vector2D(var('F2'), rad(-22)))
+box.showDiagram('box diagram')
