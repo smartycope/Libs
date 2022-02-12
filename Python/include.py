@@ -7,6 +7,7 @@ from os.path import dirname, join
 import clipboard as clip
 from clipboard import copy, paste
 import scinot
+from sympy.physics.units import *
 from sympy import *
 from sympy import abc
 from sympy.abc import *
@@ -17,7 +18,6 @@ from sympy.parsing.sympy_parser import (convert_xor, implicit_multiplication,
                                         implicit_multiplication_application,
                                         lambda_notation, parse_expr,
                                         standard_transformations)
-from sympy.physics.units import *
 import sympy.physics.units as _units
 from sympy.physics.units.prefixes import Prefix
 import sys
@@ -242,6 +242,7 @@ allEquations = [
     # 'Eq(mass, 2*time)',
     # 'Eq(theta, mass*time)',
 ]
+
 
 masterSolveParams = [
     "voltage",
@@ -494,6 +495,11 @@ masterSolve.__doc__ = 'Valid Parameters are: ' + '\n'.join(masterSolveParams)
 
 s = series
 ll = parallel
+
+DOWN = 3*pi/2
+UP   = pi/2
+LEFT = pi
+RIGHT= 0
 
 scinot.start(4, 3)
 

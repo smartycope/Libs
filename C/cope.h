@@ -74,6 +74,7 @@ static unsigned long debugCount = 0;
 #define UNPACK(...) __VA_ARGS__
 #define COMMA ,
 
+#if 0
 //! Depricated
 // static char* color(char*, char*);
 // static char* _fmt(char*, ...);
@@ -321,7 +322,7 @@ static void leave(int status);
 // #define debugged(type, var) __debugged<type>(var, (char*)#var, _typename(var))
 
 #define debug_X(x, var, color, FUNC, ...) FUNC
-#define _debug(...)  debug_X(,##__VA_ARGS__,\
+#define _debug(...)  debug_X(,##__VA_ARGS__,\Debug
                       debug_2(__VA_ARGS__),\
                       debug_1(__VA_ARGS__),\
                       debug_0(__VA_ARGS__) \
@@ -732,5 +733,6 @@ extern void     db_setfilename(const char *fn);
 extern void     db_setfileptr(FILE *fp);
 extern FILE    *db_getfileptr(void);
 
+#endif
 #endif
 #endif
