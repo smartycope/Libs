@@ -591,3 +591,6 @@ class Node:
 # box.addForce(Vector2D(30, rad(30)))
 # box.addForce(Vector2D(var('F2'), rad(-22)))
 # box.copyDiagram('box diagram')
+
+Particle = Particle2D
+Vector = Vector2D
