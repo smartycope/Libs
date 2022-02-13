@@ -2596,7 +2596,7 @@ def translate(value, fromStart, fromEnd, toStart, toEnd):
 def frange(start, stop, skip=1.0, accuracy=10000000000000000):
     return [x / accuracy for x in range(int(start*accuracy), int(stop*accuracy), int(skip*accuracy))]
 
-def getDist(ax, ay, bx, by):
+def dist(ax, ay, bx, by):
     return math.sqrt(((bx - ax)**2) + ((by - ay)**2))
 
 def deg2rad(a, symbolic=False):
