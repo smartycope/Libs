@@ -75,6 +75,10 @@ from pathlib import Path
 import importlib
 from importlib import util as importutil
 import sys
+try:
+    from sympy import pi
+except ImportError:
+    from math import pi
 
 ################################### Constants ###################################
 ENABLE_TESTING = True
@@ -2558,9 +2562,9 @@ def absdeg(angle):
 
 def absrad(angle):
     """ If an angle (in radians) is not within 2Pi, then this cuts it down to within 0-2Pi """
-    angle = angle % math.tau
+    angle = angle % (pi*2)
     if angle < 0:
-        angle += math.tau
+        angle += (pi*2)
     return angle
 
 def center(string):
