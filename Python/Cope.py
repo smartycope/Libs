@@ -54,13 +54,14 @@ __copyright__ = '(c) 2021, Copeland Carter'
 #? importpath works, but it could use some fine tuning -- just kidding, doesn't work outside of Cope.py
 #todo tested and untested don't give the right metadata (cause they're called somewhere else)
 #todo finish MultiDict
+# Make a list class or iterator that iterates in overlapping chunks (a & b, then b & c, then c & d, etc)
 
 
 ################################### Imports ###################################
 from atexit import register as registerExit
 from re import search as research
 from re import match as rematch
-from math import floor, ceil, tau, pi as PI
+from math import floor, ceil, tau, degrees, radians, pi as PI
 from ctypes import pointer, py_object
 from inspect import stack
 from os.path import basename, dirname, join
@@ -75,10 +76,11 @@ from pathlib import Path
 import importlib
 from importlib import util as importutil
 import sys
+from time import time as now
 try:
-    from sympy import pi
+    from sympy import pi, sqrt
 except ImportError:
-    from math import pi
+    from math import pi, sqrt
 
 ################################### Constants ###################################
 ENABLE_TESTING = True
@@ -1149,6 +1151,12 @@ class getTime:
         t2 = process_time()
         elapsed_time = round(t2 - self.t, self.accuracy)
         print(self.name, ' ' * (15 - len(self.name)), 'took', f'{elapsed_time:.{self.accuracy}f}', '\ttime to run.')
+
+def psleep(seconds, func):
+    """ Process sleep: run func in a while loop for a specified amount of time """
+    end = now()
+    while now() < end:
+        func()
 
 
 ################################### Misc. Useful Classes ###################################
@@ -2226,7 +2234,7 @@ class MappingList(list):
 
     def __floordiv__(self, other):
         if type(other) is MappingList and len(other) == len(self):
-            return MappingList(*[i.____(__floordiv__) for i, k in zip(other, self)])
+            return MappingList(*[i.__floordiv__(k) for i, k in zip(other, self)])
         elif type(other) is MappingList:
             raise MappingList.unmatchedLenError
         else:
@@ -2234,7 +2242,7 @@ class MappingList(list):
 
     def __truediv__(self, other):
         if type(other) is MappingList and len(other) == len(self):
-            return MappingList(*[i.____(__truediv__) for i, k in zip(other, self)])
+            return MappingList(*[i.__truediv__(k) for i, k in zip(other, self)])
         elif type(other) is MappingList:
             raise MappingList.unmatchedLenError
         else:
@@ -2506,7 +2514,6 @@ class ZerosMultiAccessDict(ZerosDict):
             return ensureNotIterable(rtn)
 
 
-
 ################################### Misc. Useful Functions ###################################
 struct = namedtuple # I'm used to C
 @todo('Make this use piping and return the command output', False)
@@ -2553,20 +2560,6 @@ def findFurthestValue(target, comparatorList) -> "value":
     """ Finds the value in comparatorList that is furthest from target """
     return max(comparatorList, key=lambda x: abs(target - x))
 
-def absdeg(angle):
-    """ If an angle (in degrees) is not within 360, then this cuts it down to within 0-360 """
-    angle = angle % 360.0
-    if angle < 0:
-        angle += 360
-    return angle
-
-def absrad(angle):
-    """ If an angle (in radians) is not within 2Pi, then this cuts it down to within 0-2Pi """
-    angle = angle % (pi*2)
-    if angle < 0:
-        angle += (pi*2)
-    return angle
-
 def center(string):
     """ Centers a string for printing in the terminal """
     from os import get_terminal_size
@@ -2595,33 +2588,6 @@ def translate(value, fromStart, fromEnd, toStart, toEnd):
 
 def frange(start, stop, skip=1.0, accuracy=10000000000000000):
     return [x / accuracy for x in range(int(start*accuracy), int(stop*accuracy), int(skip*accuracy))]
-
-def dist(ax, ay, bx, by):
-    return math.sqrt(((bx - ax)**2) + ((by - ay)**2))
-
-def deg2rad(a, symbolic=False):
-    if symbolic:
-        if ensureImported('sympy', 'pi', fatal=True):
-            return (a * pi / 180).simplify()
-    else:
-        return a * PI / 180.0
-
-def rad2deg(a, symbolic=False):
-    if symbolic:
-        if ensureImported('sympy', 'pi', fatal=True):
-            return (a * 180 / pi).simplify()
-    else:
-        return a * 180.0 / PI
-
-def normalize2rad(a):
-    while a < 0: a += math.tau
-    while a >= math.tau: a -= math.tau
-    return a
-
-def normalize2deg(a):
-    while a < 0: a += 360
-    while a >= 360: a -= 360
-    return a
 
 def portFilename(filename):
     return join(*filename.split('/'))
@@ -2686,6 +2652,86 @@ def umpteenthName(i:int) -> "1st, 2nd, 3rd, etc.":
         return i + 'rd'
     else:
         return i + 'th'
+
+
+################################### Geometry functions ###################################
+def absdeg(angle):
+    """ If an angle (in degrees) is not within 360, then this cuts it down to within 0-360 """
+    angle = angle % 360.0
+    if angle < 0:
+        angle += 360
+    return angle
+
+def absrad(angle):
+    """ If an angle (in radians) is not within 2Pi, then this cuts it down to within 0-2Pi """
+    angle = angle % (pi*2)
+    if angle < 0:
+        angle += (pi*2)
+    return angle
+
+# Turns out there's already multiple implementations of these I just wasn't seeing
+# def deg2rad(a, symbolic=False):
+    # if symbolic:
+    #     if ensureImported('sympy', 'pi', fatal=True):
+    #         return (a * pi / 180).simplify()
+    # else:
+    #     return a * PI / 180.0
+
+# def rad2deg(a, symbolic=False):
+    # if symbolic:
+    #     if ensureImported('sympy', 'pi', fatal=True):
+    #         return (a * 180 / pi).simplify()
+    # else:
+    #     return a * 180.0 / PI
+
+def dist(ax, ay, bx, by):
+    return sqrt(((bx - ax)**2) + ((by - ay)**2))
+
+def normalize2rad(a):
+    # while a < 0: a += math.tau
+    # while a >= math.tau: a -= math.tau
+    return a % (PI * 2)
+
+def normalize2deg(a):
+    # while a < 0: a += 360
+    # while a >= 360: a -= 360
+    return a % 360
+
+def constrainToUpperQuadrants(ang, deg=False):
+    if deg:
+        ang = radians(ang)
+    # Oh duh
+    return ang % PI
+
+def negPow(num, exp):
+    """ Raise num to exp, but if num starts off as negative, make the result negative """
+    neg = num < 0
+    return (num**exp) * (-1 if neg else 1)
+
+def round2(num, digits=3, tostr=True, scinot:int=False):
+    try:
+        from sympy.core.evalf import N as evalf
+        num = evalf(num)
+    except ImportError:
+        pass
+
+    try:
+        ans = round(num, digits)
+    except:
+        return '{:1f}'.format(num) if tostr else num
+
+    if scinot:
+        ensureImported('scinot', _as="scinotation")
+        if not tostr:
+            raise TypeError(f"Can't round using scientific notation and not return a string")
+        return scinotation.format(ans, scinot)
+    else:
+        return '{:1f}'.format(ans) if tostr else ans
+
+
+
+
+
 
 
 ################################### API Specific functions ###################################
@@ -3226,3 +3272,22 @@ if ENABLE_TESTING:
                 on_press=on_press,
                 on_release=on_release) as listener:
             listener.join()
+
+    #* round testing
+    if False:
+        from sympy import *
+
+        debug(round2(8.3235))
+        debug(round2(8.3235, 2))
+        debug(round2(83498.3235, 2))
+        debug(round2(Integer(432)))
+        debug(round2(Float(432.543534234)))
+        debug(round2(Float(432.543534234), 5))
+        debug(round2(Float(432.543534234), 1))
+        debug(round2(Float(432.543534234), 0))
+        debug(round2(Float(432.543534234), scinot=3))
+        debug(round2(pi))
+        debug(round2(pi, tostr=False))
+        debug(round2(pi, 8))
+        debug(round2(pi, scinot=3))
+        debug(round2(pi, scinot=9))

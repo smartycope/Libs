@@ -23,6 +23,8 @@ from sympy.physics.units.prefixes import Prefix
 import sys
 from collections import *
 from sympy.core.evalf import N as evalf
+from importlib import reload
+from Equations import *
 
 # This SHOULD be in Cope.py, but it wont work there. Not sure why.
 
@@ -62,27 +64,24 @@ def have(*obj):
         if i is None:
             yes = False
     return yes
+
 # returns true if all of the parameters are None
-
-
 def need(*obj):
     yes = True
     for i in obj:
         if i is not None:
             yes = False
     return yes
+
 # returns true if there's no more than 1 None parameter
-
-
 def involves(*obj):
     unknowns = 0
     for i in obj:
         if i is None:
             unknowns += 1
     return unknowns <= 1
+
 # returns the only parameter equal to None (or None if there are more or less than 1)
-
-
 def unknown(d: dict, *obj: str):
     # if Counter(d.values())[None] != 1:
     count = 0
@@ -97,6 +96,14 @@ def unknown(d: dict, *obj: str):
         # return debug(invertDict(d)[None], clr=2)
         # return
 
+# returns the dict d without any of the stuff equal to None in it
+def known(d: dict, *obj: str):
+    newd = {}
+    for key, val in d.items():
+        if val is not None:
+            newd[key] = val
+    return newd
+
 
 def parallel(*resistors):
     bottom = 0
@@ -108,22 +115,50 @@ def parallel(*resistors):
 def series(*resistors):
     return sum(resistors)
 
+# q = C*V_v
+# dq/dt = C * dv_c/dt
+# i_c(t) = C * d*v_c/dt
+# q=Cv_
+
+# series connected capacitors all have the same seperated charge
+# 2 capacitors in series --
+
+# # for constant dc current, a capaciter behaves like an open circuit -- and no current passes through
+
+# powerDelivered to a capacitor = v*i = v * (C*dv/dt)
+
+# power is the energy rate, p = dw/dt
+# energy = w = integral(high=t, low=t_0, p(0) * something he changed the slide)
+
+
+parallelCapacitors = llCap = series
+seriesCapacitors = sCap = parallel
+
+parallelInductors = llInd = parallel
+seriesInductors = sInd = series
+
 
 def voltDivider(inVoltage, r1, r2) -> 'voltage in the middle':
     return (inVoltage * r2) / (r1 + r2)
 
+def splitEvenly(amount, *avenues):
+    net = parallel(*avenues)
+    return [((net / r) * amount) for r in avenues]
 
+currentThroughParallelResistors = splitEvenly
+
+"""
 def currentThroughParallelResistors(current, *resistors):
     totalR = parallel(*resistors)
     return [((totalR / r) * current) for r in resistors]
+"""
 
-'''
-def currentThroughParallelResistors(current, r1, r2):
-    totalR = parallel(r1, r2)
-    i1 = (totalR /r1) * current
-    i2 = (totalR /r2) * current
-    return (i1, i2)
-'''
+def voltageBetweenCapacitors(Vin, C1, C2):
+    vn2 = symbols('vn2')
+    C1Charge = capacitor(v=Vin-vn2, C=C1)
+    C2Charge = capacitor(v=vn2,     C=C2)
+    return ensureNotIterable(solve(Eq(C1Charge, C2Charge), vn2))
+
 
 # masterSolve Functions
 def solveOhmsLaw(v=None, i=None, r=None, p=None) -> 'dict(v, i, r, p)':
@@ -167,7 +202,7 @@ def solveOhmsLaw(v=None, i=None, r=None, p=None) -> 'dict(v, i, r, p)':
         'p': p
     }
 
-
+"""
 def ohmsLaw(v=None, i=None, r=None) -> 'The one not specified':
     if have(v, r) and need(i):
         return v/r
@@ -177,9 +212,61 @@ def ohmsLaw(v=None, i=None, r=None) -> 'The one not specified':
         return v/i
     else:
         raise TypeError(f"Wrong number of parameters, bub")
+"""
+
+def ohmsLaw2(v=None, i=None, r=None, p=None) -> 'dict(v, i, r, p)':
+    """ This is really just a nice implementation of the ohm's law wheel """
+    if need(i):
+        if have(v, r):
+            i = v/r
+        elif have(p, v):
+            i = p/v
+        elif have(p, r):
+            i = sqrt(p/r)
+
+    if need(v):
+        if have(i, r):
+            v = i*r
+        elif have(p, i):
+            v = p / i
+        elif have(p, r):
+            v = sqrt(p*r)
+
+    if need(r):
+        if have(v, i):
+            r = v/i
+        elif have(v, p):
+            r = (v**2)/p
+        elif have(p, i):
+            r = p / (i**2)
+
+    if need(p):
+        if have(v, i):
+            p = v * i
+        elif have(v, r):
+            p = (v**2)/r
+        elif have(i, r):
+            p = (i**2)*r
+
+    return {
+        'v': v,
+        'i': i,
+        'r': r,
+        'p': p
+    }
 
 
+def maxPower(Vth, Rth) -> 'P_Rl':
+    return (Vth ** 2) / ( 4 * Rth)
 
+
+def norton2Thevinin(In, Rn):
+    return (In * Rn, Rn)
+
+def thevinin2Norton(Vth, Rth):
+    return (Vth / Rth, Rth)
+
+"""
 def newtonsLaw(f=None, m=None, a=None) -> 'The one not specified':
     # F = ma
     if have(f, m) and need(a):
@@ -190,8 +277,13 @@ def newtonsLaw(f=None, m=None, a=None) -> 'The one not specified':
         return f/a
     else:
         raise TypeError(f"Wrong number of parameters, bub")
-
+"""
 # Solves for a single axis at a time
+
+
+def rps2angV(rps) -> 'radians/second':
+    return 2*pi * rps
+
 
 
 @depricated
@@ -422,7 +514,7 @@ def masterSolve(maxIterations=2, __iteration=1, **v) -> "dict(solved parameters)
         v['netForce_x'] = getattr(v['netForce'], 'x', None)
         v['netForce_y'] = getattr(v['netForce'], 'y', None)
 
-    # * Done idiot proofing, now actually solve stuff
+    #* Done idiot proofing, now actually solve stuff
     # First, electrical equations
     # v.update(solveOhmsLaw(v=v['voltage'], i=
     # v['current'], r=v['resistance'], p=v['power']))
@@ -508,7 +600,6 @@ RIGHT= 0
 
 scinot.start(4, 3)
 
-specialSymbols = '≈θ𝜙°Ω±𝛼𝚫𝜔'
 # gravity = Vector2D(9.8, 270, False)
 gravity = Vector2D.fromxy(0, 9.8)
 # debug(masterSolve(acceleration=gravity, initialVelocity=Vector2D(90, 30, False), initialPosition=Point2D(0, 10), time=3))
@@ -543,6 +634,12 @@ todo('If a class inherits from 2 parent classes which both implement a function,
 
 # def current(inVCs, outVCs):
 
+class Component:
+    def __init__(self, havePolarity=False):
+        pass
+
+
+
 class Resistor:
     def __init__(self, resistance):
         self.r = resistance
@@ -559,38 +656,7 @@ class Node:
 
     # def current(self):
 
-
-# ElectricalPart
-
-
-# PowerSupply
-# Resistor
-# Node
-# connections =
-
-
-# def currentAtNode(*voltages):
-#     return ohmsLaw(v=Eq(sum(voltages), 0), )
-
-
-# vs1=24; vs2=12; R1=110; R2=270; R3=560
-
-# i1Equ = Eq(-ohmsLaw(r=R1, i=i1) - ohmsLaw(r=R2, i=i1 - i2), -vs1)
-# i2Equ = Eq-(vs2, -ohmsLaw(r=R2, i=i2 - i1) - ohmsLaw(r=R3, i=i2))
-# i1Solved = ensureNotIterable(solve(i1Equ, i1))
-# i2Solved = ensureNotIterable(solve(i2Equ, i2))
-# i2Solved.subs(i1, i1Solved)
-# i1Solved.subs(i2, i2Solved)
-# solve(i1Solved.subs(i2, i2Solved), i1)
-# solve(i2Solved.subs(i1, i1Solved), i2)
-# solve(i1Solved.subs(i2, i2Solved), i1)[0].evalf()
-# solve(i2Solved.subs(i1, i1Solved), i2)[0].evalf()
-
-# box = Particle2D(20)
-# box.addForce(Vector2D(var('F1'), LEFT))
-# box.addForce(Vector2D(30, rad(30)))
-# box.addForce(Vector2D(var('F2'), rad(-22)))
-# box.copyDiagram('box diagram')
-
 Particle = Particle2D
 Vector = Vector2D
+
+specialSymbols = '≈θ𝜙°Ω±𝛼𝚫𝜔'
