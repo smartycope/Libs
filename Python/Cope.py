@@ -1082,6 +1082,15 @@ def invertDict(d):
     """ Returns the dict given, but with the keys as values and the values as keys. """
     return dict(zip(d.values(), d.keys()))
 
+def addDicts(*dicts):
+    """ Basically the same thing as Dict.update(), except returns a copy
+        (and can take multiple parameters)
+    """
+    rtn = {}
+    for d in dicts:
+        rtn.update(d)
+    return rtn
+
 @todo
 class LoopingList(list):
     """ It's a list, that, get this, loops!
@@ -2485,7 +2494,6 @@ class ZerosDict(dict):
         else:
             return None
 
-
 class MultiAccessDict(dict):
     """ Exactly the same thing as a regular dict, except you can get and set multiple items
         at once, and it returns a list of the asked for items, or sets all of the items to
@@ -2639,7 +2647,7 @@ def fancyComment(title='', char='#', endChar='#', lineLimit=80):
     """ Replaces the call with a nicely formatted comment line """
     halfLen = ((lineLimit / len(char)) - len(title) - 1 - (2 if len(title) else 0) - len(endChar)) / 2
     seperateChar = ' ' if len(title) else ''
-    replaceLine('#' + (char * ceil(halfLen)) + seperateChar + title.title() + seperateChar + (char * floor(halfLen)) + endChar, keepTabs=False, additionalCalls=1)
+################################## Electronics #################################
 
 # No, English does not make any sense.
 def umpteenthName(i:int) -> "1st, 2nd, 3rd, etc.":

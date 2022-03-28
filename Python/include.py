@@ -20,15 +20,33 @@ from sympy.parsing.sympy_parser import (convert_xor, implicit_multiplication,
                                         standard_transformations)
 import sympy.physics.units as _units
 from sympy.physics.units.prefixes import Prefix
+from sympy.physics.optics import TWave
 import sys
+from warnings import warn
 from collections import *
-from sympy.core.evalf import N as evalf
+# from sympy.core.evalf import N as evalf
+# from sympy import N as evalf
+from sympy import N
+import matplotlib.pyplot as plt
+import numpy as np
+import sympy as sp
 from importlib import reload
-from Equations import *
+from sympy.physics.vector import *
+# if not debug(ZerosDict(globals())['NO_EQUATIONS']):
+# from Equations import *
+
+
+
+# SUM SYNTAX
+# Sum(val, (i, start, end))
+# Sum(val, (i, low, high))
+
+# INTEGRAL SYNTAX
+# Integral(val, var)
+# Integral(val, (var, low, high))
+
 
 # This SHOULD be in Cope.py, but it wont work there. Not sure why.
-
-
 def importpath(path, name, moduleName):
     spec = importutil.spec_from_file_location(name, path)
     module = importutil.module_from_spec(spec)
@@ -105,37 +123,9 @@ def known(d: dict, *obj: str):
     return newd
 
 
-def parallel(*resistors):
-    bottom = 0
-    for r in resistors:
-        bottom += 1/r
-    return 1/bottom
 
-
-def series(*resistors):
-    return sum(resistors)
-
-# q = C*V_v
-# dq/dt = C * dv_c/dt
-# i_c(t) = C * d*v_c/dt
-# q=Cv_
-
-# series connected capacitors all have the same seperated charge
-# 2 capacitors in series --
-
-# # for constant dc current, a capaciter behaves like an open circuit -- and no current passes through
-
-# powerDelivered to a capacitor = v*i = v * (C*dv/dt)
-
-# power is the energy rate, p = dw/dt
-# energy = w = integral(high=t, low=t_0, p(0) * something he changed the slide)
-
-
-parallelCapacitors = llCap = series
-seriesCapacitors = sCap = parallel
-
-parallelInductors = llInd = parallel
-seriesInductors = sInd = series
+_i = I
+_e = E
 
 
 def voltDivider(inVoltage, r1, r2) -> 'voltage in the middle':
@@ -279,10 +269,6 @@ def newtonsLaw(f=None, m=None, a=None) -> 'The one not specified':
         raise TypeError(f"Wrong number of parameters, bub")
 """
 # Solves for a single axis at a time
-
-
-def rps2angV(rps) -> 'radians/second':
-    return 2*pi * rps
 
 
 
@@ -435,7 +421,7 @@ masterSolvePsuedonyms = {
     'friction': 'staticFriction'
 }
 
-
+'''
 vectorParams = ('velocity', 'initialVelocity', 'acceleration', 'netForce', 'drag')
 pointParams = ('position', 'initialPosition', 'displacement', 'distance')
 boolParams = ('isVoltageDivider',)
@@ -589,9 +575,7 @@ def masterSolve(maxIterations=2, __iteration=1, **v) -> "dict(solved parameters)
     return v
 
 masterSolve.__doc__ = 'Valid Parameters are: ' + '\n'.join(masterSolveParams)
-
-s = series
-ll = parallel
+'''
 
 DOWN = 3*pi/2
 UP   = pi/2
@@ -639,6 +623,9 @@ class Component:
         pass
 
 
+# Integral syntax:
+# Integral(base, (var, low, high))
+
 
 class Resistor:
     def __init__(self, resistance):
@@ -656,7 +643,544 @@ class Node:
 
     # def current(self):
 
-Particle = Particle2D
-Vector = Vector2D
+# Particle = Particle2D
+# Vector = Vector2D
 
 specialSymbols = '≈θ𝜙°Ω±𝛼𝚫𝜔'
+
+dummyDict = {'a':1, 'b':2, 'c':3}
+# dummyDict2 = {'a':1, 'b':2}
+dummySet = {1, 2, 3}
+dummySet2 = {2, 3, 4, 5, 6, 7}
+
+NORTH=pi/2
+EAST=0
+WEST=pi
+SOUTH=3*pi/2
+
+# My own copy function
+def cp(thing, rnd=4, show=False):
+    if isinstance(thing, Basic) and not isinstance(thing, Float):
+        copy(latex(thing))
+        if show:
+            print('latexing')
+    else:
+        try:
+            if rnd:
+                copy(str(round(thing, rnd)))
+                if show:
+                    print('rounding')
+            else:
+                raise Exception()
+        except:
+            copy(str(thing))
+            if show:
+                print('stringing')
+    return thing
+
+
+
+class ReadOnlyError(Exception):
+    pass
+
+# Amplitude * sin(period * (xOffset - AngularFrequency) * time + phase) + yOffset
+# frequency == ohmega
+# ohmega == angular frequency
+# ohmega == 1/period
+
+
+
+# PHASOR QUESTIONS
+# what is 120 in (170 V)sin(120πt))? is it period, or angular frequency or something else?
+# y_t == A * cos(k * x - ohmega * t + phi) + y
+
+# How do you get
+# What is the sin(a) + jcos(b) thing for?
+# How do you convert from polar to exponential coordinants and back?
+# there's phase angle, phase, theta, phi, angular frequency, and frequency. Which ones are the same thing, and how do they relate to each other?
+
+
+# period / pi -> Amp * sin(period/pi)
+# theta == period
+
+
+# period = 1/frequency = wavelength / velocity
+# 2*pi *f == angular frequency == 2*pi/period
+
+@reprise
+class Phasor(AtomicExpr):
+    def __init__(self, real, img):
+        self.real = self.re = real
+        self.img  = self.im = img
+        self.peak2peak = self.amplitude = self.A
+        self.phase = self.phi
+        self.r = self.mag
+
+        # self.theta = self.period
+
+    def getQuadrant(self):
+        pass
+
+    def angularFrequency(self):
+        return 2 * pi * frequency()
+
+    def frequency(self):
+        return self._wave.time_period
+
+    def period(self):
+        return self.theta
+
+    def wavelength(self):
+        NotImplemented
+
+
+    @staticmethod
+    @confidence(65)
+    def fromExp(A, phi):
+        return Phasor.fromPolar(A, phi)
+
+    @staticmethod
+    def fromWave(wave:TWave):
+        # Amplitude * sin(period * (xOffset - AngularFrequency) * time + phase) + yOffset
+        # sineParser = er.group(er.optional(er.number())) + er.group(er.either('sin', 'cos')) + '(' + er.group(er.optional(er.number())) +
+        # return Phasor.fromExp(wave.amaplitude, wave.)
+        NotImplemented
+
+    @staticmethod
+    def fromSine(amplitude, phase=0, sin=True):
+        # phi == phase == xOffset
+
+
+        # print(f'period = {period}')
+        # print(f'frequency = {frequency}')
+        # print(f'phase = {phase}')
+
+        return Phasor.fromPolar(amplitude, (phase - pi) if sin else phase)
+        # x, y = symbols('x y')
+        # _x = ensureNotIterable(solve(amplitude * cos(period) / x + amplitude * sin(period) / y, x))
+        # _y = ensureNotIterable(solve(amplitude * cos(period) / x + amplitude * sin(period) / y, y))
+        # return Phasor(_x, _y)
+
+        # wave = TWave(amplitude, period=period)
+        # return Phasor.fromWave(wave)
+
+    @staticmethod
+    def fromRect(real, img):
+        return Phasor(real, img)
+
+    @staticmethod
+    def fromPolar(mag, theta):
+        return Phasor(mag * cos(theta), mag * sin(theta))
+
+    @staticmethod
+    def fromPolarDeg(mag, theta):
+        return Phasor(mag * cos(rad(theta)), mag * sin(rad(theta)))
+
+
+    def asExp(self, eval=True) -> "A*e^(j*phi)":
+        _N = N if eval else lambda x: x
+        return _N(self.A, n=5) * _e**(_i * _N(self.phi, n=5))
+
+    def asSine(self, angFeq, sin=False, eval=True) -> "A*cos(ang*t+theta)":
+        var('t')
+        if sin:
+            return im(self.A * _e ** (_i * (angFeq*t + self.phi)))
+        else:
+            return (self * _e ** (_i*angFeq*t)).im.simplify()
+
+    def asRect(self, eval=True) -> "real + j*img":
+        _N = N if eval else lambda x: x
+        return _N(self.re, n=5) + _i * _N(self.im, n=5)
+
+    def asPolar(self, eval=True) -> "(mag, theta)":
+        # return (self.mag, self.theta)
+        _N = N if eval else lambda x: x
+        return f'{_N(self.mag, n=5)} ∠ {_N(self.theta, n=5)}'
+
+    def asPolarDeg(self, eval=True) -> "(mag, theta)":
+        # return (self.mag, deg(self.theta))
+        _N = N if eval else lambda x: x
+        return f'{_N(self.mag, n=5)} ∠ {_N(deg(self.theta), n=5)}°'
+
+
+    @property
+    def mag(self):
+       return sqrt((self.re**2) + (self.im**2))
+    @mag.setter
+    def mag(self, to):
+       raise ReadOnlyError()
+
+    @property
+    def theta(self):
+       return atan2(self.im, self.re)
+    @theta.setter
+    def theta(self, to):
+       raise ReadOnlyError()
+
+    @property
+    @confidence(55)
+    def A(self):
+       return self.mag
+    @A.setter
+    def A(self, to):
+       raise ReadOnlyError()
+
+    @property
+    @confidence(55)
+    def phi(self):
+       return self.theta
+    @phi.setter
+    def phi(self, to):
+       raise ReadOnlyError()
+
+
+    def __add__(self, other):
+        if type(other) is type(self):
+            return Phasor(self.re + other.re, self.im + other.im)
+        else:
+            raise TypeError(f"Can't add Phasor by {type(other)}")
+
+    def __sub__(self, other):
+        if type(other) is type(self):
+            return Phasor(self.re - other.re, self.im - other.im)
+        else:
+            raise TypeError(f"Can't subtract Phasor by {type(other)}")
+
+    def __mul__(self, other):
+        if type(other) is type(self):
+            return Phasor.fromPolar(self.mag * other.mag, self.phi + other.phi)
+        else:
+            raise TypeError(f"Can't multiply Phasor by {type(other)}")
+
+    def __div__(self, other):
+        if type(other) is type(self):
+            return Phasor.fromPolar(self.mag / other.mag, self.phi - other.phi)
+        else:
+            raise TypeError(f"Can't divide Phasor by {type(other)}")
+
+    def __rdiv__(self, other):
+        # Just handles the reciprical
+        if other == 1:
+            return Phasor.fromPolar(other / self.mag, self.phi * -other)
+        else:
+            raise TypeError(f"Can't divide {type(other)} by Phasor")
+
+    def __pow__(self, exp):
+        # Only gets the square root
+        if exp == (1/2):
+            Phasor.fromPolar(self.mag**exp, self.phi * exp)
+        else:
+            # raise TypeError()
+            warn('Using untested Phasor exponents')
+            Phasor.fromPolar(self.mag**exp, self.phi * exp)
+
+    def __str__(self):
+        return self.asPolarDeg(eval=True)
+
+    def __abs__(self):
+        return self.mag
+
+    def _eval_power(self, exp):
+        return self.__pow__(exp)
+
+
+
+@reprise
+class FastPhasor(complex):
+    # def __init__(self, real, img):
+        # super().__init__(real, img)
+        # self.theta = self.period
+
+    def getQuadrant(self):
+        NotImplemented
+
+    def angularFrequency(self):
+        return 2 * math.pi * frequency()
+
+    def frequency(self):
+        NotImplemented
+
+    def period(self):
+        return self.theta
+
+    def wavelength(self):
+        NotImplemented
+
+
+    @staticmethod
+    @confidence(65)
+    def fromExp(A, phi):
+        return FastPhasor.fromPolar(A, phi)
+
+    @staticmethod
+    def fromWave(wave:TWave):
+        # Amplitude * sin(period * (xOffset - AngularFrequency) * time + phase) + yOffset
+        # sineParser = er.group(er.optional(er.number())) + er.group(er.either('sin', 'cos')) + '(' + er.group(er.optional(er.number())) +
+        # return FastPhasor.fromExp(wave.amaplitude, wave.)
+        NotImplemented
+
+    @staticmethod
+    def fromSine(amplitude, phase=0, sin=True):
+        # phi == phase == xOffset
+
+
+        # print(f'period = {period}')
+        # print(f'frequency = {frequency}')
+        # print(f'phase = {phase}')
+
+        return FastPhasor.fromPolar(amplitude, (phase - math.pi) if sin else phase)
+        # x, y = symbols('x y')
+        # _x = ensureNotIterable(solve(amplitude * cos(period) / x + amplitude * sin(period) / y, x))
+        # _y = ensureNotIterable(solve(amplitude * cos(period) / x + amplitude * sin(period) / y, y))
+        # return FastPhasor(_x, _y)
+
+        # wave = TWave(amplitude, period=period)
+        # return FastPhasor.fromWave(wave)
+
+    @staticmethod
+    def fromRect(real, img):
+        return FastPhasor(real, img)
+
+    @staticmethod
+    def fromPolar(mag, theta):
+        return FastPhasor(mag * math.cos(theta), mag * math.sin(theta))
+
+    @staticmethod
+    def fromPolarDeg(mag, theta):
+        return FastPhasor(mag * math.cos(math.radians(theta)), mag * math.sin(math.radians(theta)))
+
+    @staticmethod
+    def fromComplex(c):
+        return FastPhasor(c.real, c.imag)
+
+
+    # def asExp(self) -> "A*e^(j*phi)":
+        # return self.A * math.e**(_i * _N(self.phi, n=5))
+
+    # def asSine(self, angFeq, sin=False, eval=True) -> "A*cos(ang*t+theta)":
+        # if sin:
+        #     return im(self.A * math.e ** (_i * (angFeq*t + self.phi)))
+        # else:
+        #     return (self * _e ** (_i*angFeq*t)).im.simplify()
+
+    def asRect(self)->str:
+        return f"{self.real} + {self.im}j"
+
+    def asPolar(self) -> "(mag, theta)":
+        return (self.mag, self.theta)
+
+    def asPolarDeg(self) -> "(mag, theta)":
+        return (self.mag, math.degrees(self.theta))
+
+
+    @property
+    def mag(self):
+       return math.sqrt((self.re**2) + (self.im**2))
+
+    @property
+    def theta(self):
+       return math.atan2(self.im, self.re)
+       # return math.atan(self.im / self.re)
+
+    @property
+    @confidence(55)
+    def A(self):
+       return self.mag
+
+    @property
+    @confidence(55)
+    def phi(self):
+       return self.theta
+
+    @property
+    def re(self):
+        return self.real
+
+    @property
+    def im(self):
+        return self.imag
+
+    @property
+    def amplitude(self):
+        return self.A
+
+    @property
+    def phase(self):
+        return self.phi
+
+    @property
+    def r(self):
+        return self.mag
+
+
+
+    #! v(t) == r*cos(ohmega*t+phi) == (r*_e**(j*ohmega)... dang it!
+
+    def __add__(self, other):
+        if isinstance(other, Basic):
+            return other + self
+        else:
+            return FastPhasor.fromComplex(super().__add__(other))
+
+    def __sub__(self, other):
+        if isinstance(other, Basic):
+            return other + self
+        else:
+            return FastPhasor.fromComplex(super().__sub__(other))
+
+    def __mul__(self, other):
+        if isinstance(other, Basic):
+            return other + self
+        else:
+            return FastPhasor.fromComplex(super().__mul__(other))
+
+    def __div__(self, other):
+        if isinstance(other, Basic):
+            return other + self
+        else:
+            return FastPhasor.fromComplex(super().__div__(other))
+
+    def __rdiv__(self, other):
+        if isinstance(other, Basic):
+            return other + self
+        else:
+            return FastPhasor.fromComplex(super().__rdiv__(other))
+
+    def __pow__(self, exp):
+        if isinstance(other, Basic):
+            return other + self
+        else:
+            return FastPhasor.fromComplex(super().__pow__(other))
+
+    def __str__(self):
+        return f'{round(self.mag, 5)} ∠ {round(math.degrees(self.theta), 5)}°'
+
+
+
+    # def __abs__(self):
+    #     return self.mag
+
+    # def _eval_power(self, exp):
+    #     return self.__pow__(exp)
+
+
+
+
+
+
+
+# derivative of a sinusoid == Phasor.fromSine(sinusoid) * _i * sinusoid.angFeq
+# indefinite integral of a sinusoid == Phasor.fromSine(sinusoid) / (_i * sinusoid.angFeq)
+# adding sinusoids of the same frequency is equal to adding their phasors
+
+class Sinusoid(TWave):
+    @property
+    def phasor(self):
+       return Phasor.fromSine(self.amplitude, self.phase)
+
+    def diff(self, var=None):
+        if var:
+            NotImplemented
+        else:
+            return self.phasor * _i * self.angular_frequency
+
+    def integrate(self):
+        return self.phasor / (_i * self.angular_frequency)
+
+
+
+def createPlot(xPoints, *yPoints, xlabel='x', ylabel='y', size=(15, 8), labels=None, grid=True, title='Copeland Carter', copy=False, show=False, dpi='figure', labelSize='xx-large'):
+    fig = plt.figure(figsize=size)
+    ax  = fig.add_subplot(111)
+    ax.set_position([0, 0, 1, 1])
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.title(title)
+    if grid:
+        ax.grid()
+
+    # plot = ax.plot if type == 'rect' else ax.polar
+
+    if labels:
+        for y, label in zip(yPoints, labels):
+            ax.plot(xPoints, y, label=label)
+    else:
+        for y in yPoints:
+            ax.plot(xPoints, y)
+
+    if labels or show:
+        ax.legend(fontsize=labelSize)
+    elif show:
+        ax.show()
+
+    if copy:
+        fig.savefig("/tmp/imageCopyDeamon.png", bbox_inches='tight', dpi=dpi)
+
+    return fig, ax
+
+
+def createPolarPlot(thetaPoints, *rPoints, size=(15, 8), labels=None, grid=True, legendLoc='center', title='Copeland Carter', copy=False, show=False, dpi='figure'):
+    fig = plt.figure(figsize=size)
+    ax  = fig.add_subplot(111, projection='polar')
+    # ax.set_position([0, 0, 1, 1])
+    ax.set_rorigin(0)
+    # ax.set_ylim(2, 6)
+    # plt.xlabel(xlabel)
+    # plt.ylabel(ylabel)
+    plt.title(title)
+    if grid:
+        ax.grid(which='major', linestyle='-', linewidth='0.25', color='black')
+        # ax.grid(which='minor', linestyle='--', linewidth='0.15', color='black')
+
+    # plot = ax.plot if type == 'rect' else ax.polar
+    # ax.minorticks_on()
+
+    if labels:
+        for y, label in zip(rPoints, labels):
+            ax.plot(thetaPoints, y, label=label)
+    else:
+        for y in rPoints:
+            ax.plot(thetaPoints, y)
+
+    if labels or show:
+        ax.legend(fontsize='x-large', loc=legendLoc, frameon=False)
+    elif show:
+        ax.show()
+
+    if copy:
+        fig.savefig("/tmp/imageCopyDeamon.png", bbox_inches='tight', dpi=dpi)
+
+    return fig, ax
+
+
+
+
+Vec = ReferenceFrame('Vec')
+ml=MappingList
+
+
+
+# phasor mult is
+# mult mags then add angles
+
+# division is
+# mult mags then sub angles
+
+
+# resistor: (I think)
+# v_R == i_R(t)*R
+# v_R == V_m * cos(2*pi*f*t)
+# i_R(t) == (V_m / R) * cos(ohmega * t) == i_m*cos(ohmega*t)
+
+# inductor:
+# v_L(t) == L*((Derivative(i_L(t), t)))
+# V_L == j*ohmega*L*i_L -- i_L and V_L are bolded
+
+# whenever you mult by j its a 90 degree phase shift
+
+# capacitor:
+# i_C(t) == C*Derivative(v_C(t), t) == j*ohmega*C*v_c -- CONFIRM
+
+# Derivative(cos(2*pi*f*t), t) == (-2*pi*f)*sin(2*pi*f*t)
+
+# its not the voltage/current, its the time rate of change, which is how they get out of phase in inductors/capacitors

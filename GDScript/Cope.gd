@@ -21,7 +21,6 @@ func _ready():
     #* Call test code here
     # assert(null != 0)
 
-
 func toast(labelNode, text, time=2.5):
     labelNode.text = text
     yield(get_tree().create_timer(time), "timeout")
@@ -37,7 +36,6 @@ func popup(title, text):
     p.connect("confirmed", p, "free")
     get_tree().get_root().add_child(p)
     p.popup_centered()
-
 
 class SceneLoader:
     extends Object
@@ -104,7 +102,6 @@ class SceneLoader:
         # It is now safe to remove the old scene
         if free and is_instance_valid(oldScene):
             oldScene.free()
-
 
 func saveScene(currentSceneName, currentSceneInstance):
     instancedScenes[currentSceneName] = currentSceneInstance
