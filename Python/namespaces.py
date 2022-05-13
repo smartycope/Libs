@@ -1,4 +1,5 @@
-from Equation import Namespace
+from Equation import Namespace, Unit
+from equationModifiers import *
 
 
 physics = Namespace('physics',
@@ -50,13 +51,21 @@ physics = Namespace('physics',
     Unit('tau',  'torque', 'Newton meters').generateVariant(),
     Unit('kew',  'kinetic energy in a flywheel', 'Joules'),
     Unit('L',    'Angular Momentum', 'kilogram meters^2/second').generateVariant(),
+    Unit('G',     'Gravitational Constant', 'Newtons * meters/kilograms^2'),
+    Unit('v_esc', 'Escape velocity', 'meters/second', {'v_o', 'escv', 'esc_v'}),
+    Unit('M_E',  'mass of the earth (or the body in question) (5.98*10^24 kg)', 'kilograms'),
+    Unit('R_E',  'radius of the earth (or the body in question) (6.37*10^6 m)', 'meters'),
+    Unit('M_S',  'Mass of the sun (or body in question)', 'kilograms'),
+    Unit('sma',  'semi-major axis (smallest radius of an ellipse)', 'meters'),
+    Unit('ma',  'major axis (largest radius of an ellipse)', 'meters'),
     # Unit(# 'f', 'frequency', 'Hertz'),
 )
 
 electronics = Namespace('electronics',
-    Unit('v',        'voltage', 'volts').generateVariant(initial, final, time, primary, secondary, throughResistor, throughCapacitor, throughInductor, inMod, outMod),
-    Unit('i',        'current', 'amps').generateVariant(initial, final, time, primary, secondary, throughResistor, throughCapacitor, throughInductor, inMod, outMod),
+    Unit('v',        'voltage', 'volts').generateVariant(initial, final, time, primary, secondary, throughResistor, throughCapacitor, throughInductor, inMod, outMod, peak),
+    Unit('i',        'current', 'amps').generateVariant(initial, final, time, primary, secondary, throughResistor, throughCapacitor, throughInductor, inMod, outMod, peak),
     Unit('r',        'resistance', 'ohms').generateVariant(time, primary, secondary, equivalent, throughCapacitor, throughInductor),
+    Unit('p',        'power', 'watts').generateVariant(time, primary, secondary, equivalent, throughCapacitor, throughInductor, peak),
     Unit('G',        'conductance', 'Seimanns').generateVariant(time, primary, secondary, equivalent),
     Unit('Gn',       'conductance of a given resistor'),
     Unit('iGn',      'current through a given resistor'),
@@ -88,6 +97,7 @@ electronics = Namespace('electronics',
     Unit('X',        'reactance').generateVariant(time, initial, final, primary, secondary, throughCapacitor, throughInductor, phasor),
     Unit('Y',        'admittance', 'Seimenns').generateVariant(time, initial, final, primary, secondary, throughCapacitor, throughInductor, phasor),
     Unit('B',        'suceptance', '1/reactance').generateVariant(time, initial, final, primary, secondary, throughCapacitor, throughInductor, phasor),
+    Unit('phV_s',        'AC current source phasor'),
     # Unit('G',        'conductance').generateVariant(time, initial, final, primary, secondary, throughCapacitor, throughInductor, phasor),
 
 

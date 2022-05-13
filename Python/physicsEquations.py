@@ -1,5 +1,7 @@
-from Equation import Equation
+from Equation import Equation, Unit
 from namespaces import physics
+from sympy import Symbol
+from constants import *
 
 
 newtonsLaw = Equation("f == m*a", physics)
@@ -151,7 +153,7 @@ torque3 = Equation('tau == f*r*sin(theta)', physics, tags={'torque'})
 torque = Equation('tau == cross(f, r)', physics, tags={'torque'})
 torque2 = Equation('tau == I*angA', physics, tags={'torque'})
 # Just a derivation of the above 2 equations:
-inertia2Force = Equation('I*angA == f*r', physics)
+inertia2Force = Equation('I*angA == f*r*sin(theta)', physics)
 # torque = forceAt90DegreeAngle
 
 # ! net torque in a non-moving system is 0
@@ -166,3 +168,9 @@ angularMomentum = Equation('L == cross(r, p)', physics)
 angularImpulseMomentumTheorem = Equation('T == Derivative(L, t)', physics, tags={'impulse', 'momentum'})
 angularMomentumInertia = Equation('L_xaxis == I * angS', physics)
 conservationOfAngularMomentum = Equation('L_i == L_f', physics)
+
+#* SPESS
+universalGravityEquation = gravityEqu = Equation('f == G*((m1 * m2)/r**2)', physics, defaults={'G': G, 'm2': 1})
+infiniteGravityPotentialEnergy = Equation('pe == (-G*m1*m2)/r', physics, defaults={'G': G, 'm2': 1})
+escapeVelocity = Equation('v_esc == sqrt((2*G*M_E/R_E))', physics, defaults={'G': G})
+keplers3rdLaw = Equation('T == sqrt(((4*pi**2)/(G*(m1+m2)))*sma**3)', physics, defaults={'G': G, 'm2': 1})

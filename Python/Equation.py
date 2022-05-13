@@ -6,96 +6,8 @@ import re
 from warnings import warn
 from copy import deepcopy, copy as objcopy
 from include import unknown, known
+from equationModifiers import delta, initial, final
 
-'''
-# returns the only parameter equal to None (or None if there are more or less than 1)
-def unknown(d: dict, *obj: str):
-    # if Counter(d.values())[None] != 1:
-    count = 0
-    for key in obj:
-        if d[key] is None:
-            count += 1
-            thing = key
-    if count != 1:
-        return None
-    else:
-        return thing
-
-# returns the dict d without any of the stuff equal to None in it
-def known(d: dict, *obj: str):
-    newd = {}
-    for key, val in d.items():
-        if val is not None:
-            newd[key] = val
-    return newd
-'''
-
-UnitModifier = namedtuple('UnitModifier', 'description, psuedonyms, abbrev')
-initial = UnitModifier(
-    description=lambda d: 'initial ' + d,
-    psuedonyms= lambda abbrev: ('init ' + abbrev, 'initial ' + abbrev, abbrev + 'i'),
-    abbrev=     lambda abbrev: abbrev + '_i'
-)
-final = UnitModifier(
-    lambda d: 'final ' + d,
-    lambda abbrev: ('final ' + abbrev, 'fin ' + abbrev, abbrev + 'f'),
-    lambda abbrev: abbrev + '_f'
-)
-delta = UnitModifier(
-    lambda d: 'delta ' + d,
-    lambda abbrev: (),
-    lambda abbrev: 'd' + abbrev
-)
-time = UnitModifier(
-    lambda d: d + ' at time t',
-    lambda abbrev: (abbrev + 't', abbrev + '(t)'),
-    lambda abbrev: abbrev + '_t'
-)
-primary = UnitModifier(
-    lambda d: 'primary ' + d,
-    lambda abbrev: ('1 ' + abbrev, 'primary ' + abbrev, abbrev + '1', abbrev + '_1', abbrev + 'p', 'p' + abbrev, 'a' + abbrev, abbrev + 'a', abbrev + '_a'),
-    lambda abbrev: abbrev + '_p'
-)
-secondary = UnitModifier(
-    lambda d: 'secondary ' + d,
-    lambda abbrev: ('2 ' + abbrev, 'secondary ' + abbrev, abbrev + '2', abbrev + '_2', abbrev + 's', 's' + abbrev, 'b' + abbrev, abbrev + 'b', abbrev + '_b'),
-    lambda abbrev: abbrev + '_p'
-)
-equivalent = UnitModifier(
-    lambda d: 'equivalent ' + d,
-    lambda abbrev: (),
-    lambda abbrev: abbrev.capitalize() + 'eq'
-)
-throughCapacitor = UnitModifier(
-    lambda d: d + ' through capacitor C',
-    lambda abbrev: (abbrev + 'C',),
-    lambda abbrev: abbrev + '_C'
-)
-throughInductor = UnitModifier(
-    lambda d: d + ' through inductor L',
-    lambda abbrev: (abbrev + 'L',),
-    lambda abbrev: abbrev + '_L'
-)
-throughResistor = UnitModifier(
-    lambda d: d + ' through resistor R',
-    lambda abbrev: (abbrev + 'R',),
-    lambda abbrev: abbrev + '_R'
-)
-inMod = UnitModifier(
-    lambda d: d + ' in',
-    lambda abbrev: (abbrev + 'in', abbrev.capitalize() + 'in', abbrev.capitalize() + '_in'),
-    lambda abbrev: abbrev + '_in'
-)
-outMod = UnitModifier(
-    lambda d: d + ' out',
-    lambda abbrev: (abbrev + 'out', abbrev.capitalize() + 'out', abbrev.capitalize() + '_out'),
-    lambda abbrev: abbrev + '_out'
-)
-phasor = UnitModifier(
-    lambda d: d + ' phasor',
-    lambda abbrev: ('ph_' + abbrev),
-    lambda abbrev: 'ph' + abbrev
-)
 
 @reprise
 class Unit:
@@ -239,7 +151,6 @@ class Equation:
             # self._help = pretty(self.expr)
 
         # Add to equation search
-        todo()
         # _equationFunctions[tuple(atomNames)] = (name, sympyExpr)
 
     def help(self):
@@ -405,34 +316,35 @@ seriesAdmittances = parallel
 parallelAdmittances = series
 
 
-listOfEquations = [i for i in globals().values() if type(i) is Equation]
+def listOfEquations(globals):
+    return [i for i in globals.values() if type(i) is Equation]
 
 # I don't understand how this error is possible. This should work.
 # globalsItems = globals().items()
-# listOfEquations = []
+# listOfEquations() = []
 # dictOfEquations = {}
 # for name, eq in globalsItems:
 #     if type(eq) is Equation:
-#         listOfEquations.append(eq)
+#         listOfEquations().append(eq)
 #         dictOfEquations[eq] = name
 
 
-def dictOfEquations():
+def dictOfEquations(globals):
     d = {}
-    for name, eq in globals().items():
+    for name, eq in globals.items():
         if type(eq) is Equation:
             d[eq] = name
     return d
 
 
-def searchEquations(*whatWeHave, loose=True, searchNames=False, names=True, tags=True, namespace=physics):
+def searchEquations(globals, *whatWeHave, namespace, loose=True, searchNames=False, names=True, tags=True):
     rtn = []
     # Just check if what they've entered is valid
     for i in whatWeHave:
         if i not in namespace and not loose and not searchNames and not tags:
             warn(f"{i} not a valid variable name")
 
-    for name, i in globals().items():
+    for name, i in globals.items():
         if type(i) is Equation:
             # Check if the equation applies (by comparing variable names)
             if i.applicable(*whatWeHave, loose=loose, tags=tags) and i.namespace.name in ('na', namespace.name):
@@ -448,11 +360,10 @@ def searchEquations(*whatWeHave, loose=True, searchNames=False, names=True, tags
 
 #* The NEW MasterSolve
 # Not sure how this will react if given a default parameter
-def masterSolve(*args, namespace=physics, recurse=True, **kwargs):
-    global listOfEquations
+def masterSolve(globals, *args, namespace, recurse=True, **kwargs):
     derived = {}
     # loop through all the equations we can actually use
-    for eq in filter(lambda x: x.applicable(*(kwargs.keys())), listOfEquations):
+    for eq in filter(lambda x: x.applicable(*(kwargs.keys())), listOfEquations(globals)):
         # Only use the equations relavant to the variables passed in
         if eq.namespace == namespace:
             solvingFor = ensureNotIterable(set(eq.atomNames).difference(kwargs.keys()))
@@ -484,31 +395,3 @@ def masterSolve(*args, namespace=physics, recurse=True, **kwargs):
         derived = addDicts(derived, masterSolve(**addDicts(kwargs, derived)))
 
     return derived
-
-
-
-#* Units
-# Milli
-m=1/1000
-# Mega
-M=1000000
-# Kilo
-k=1000
-# Micro
-mu=1/1000000
-# Nano
-n=1/1000000000
-# Default is kilograms
-gram=1/1000
-# Default is seconds
-h=1/3600
-# Defualt is meters
-cm=1/100
-mm=1/1000
-km=1000
-# Defualt is seconds
-ms=1/1000
-g=9.80665
-# Default is revolutions/second
-rpm=60
-minute=1/60

@@ -1,6 +1,6 @@
-from Equation import Equation
+from Equation import Equation, Unit
 from namespaces import electronics
-
+from include import series, parallel
 
 ohmsLaw = Equation("v == i*r", electronics)
 conductanceSolver = Equation("iGn == (i*Gn)/Geq",{
@@ -15,20 +15,20 @@ opAmpOutput = Equation("Vout == Av * Vin", {
     'Vout': 'the output voltage of the op amp',
     'Av': 'Voltage Gain, Vin = voltage in'
 })
-invertingOpAmpGain    = Equation("Av == -(Rf / Rin)", {
-    'Av': 'Voltage Gain',
-    'Rf': 'the resistor connecting the op amp Vout and the op amp negative in terminals',
-    'Rin': 'the resistor between Vin and the op amp negative in',
-    'Vout': 'the output voltage of the op amp',
-    'Vin': 'voltage connected to Rin',
-})
-noninvertingOpAmpGain = Equation('Av == 1 + (Rf / R)', {
-    'Av': 'Voltage Gain',
-    'Rf': 'the resistor connecting the op amp Vout and the op amp negative in terminals',
-    'R': 'the resistor between ground and the op amp negative in',
-    'Vout': 'the output voltage of the op amp',
-    'Vin': 'voltage connected to the op amp positive in',
-})
+invertingOpAmpGain    = Equation("Av == -(Rf / Rin)", electronics.replace(
+    Unit('Av', 'Voltage Gain'),
+    Unit('Rf', 'the resistor connecting the op amp Vout and the op amp negative in terminals'),
+    Unit('Rin', 'the resistor between Vin and the op amp negative in'),
+    Unit('Vout', 'the output voltage of the op amp'),
+    Unit('Vin', 'voltage connected to Rin'),
+))
+noninvertingOpAmpGain = Equation('Av == 1 + (Rf / R)', electronics.replace(
+    Unit('Av', 'Voltage Gain'),
+    Unit('Rf', 'the resistor connecting the op amp Vout and the op amp negative in terminals'),
+    Unit('R', 'the resistor between ground and the op amp negative in'),
+    Unit('Vout', 'the output voltage of the op amp'),
+    Unit('Vin', 'voltage connected to the op amp positive in'),
+))
 
 #* Capacitors:
 capacitorEnergy = Equation('W == (1/2) * C * v**2', electronics)
@@ -64,13 +64,14 @@ RCDischargeVoltage = Equation('v_t == vi * _e ** (-t/tc)', electronics)
 RCTimeConstant = Equation('tc == Req * C', electronics)
 RCChargeVoltage = Equation('v_t == vs + (vi - vs) * _e**(-t/tc)', electronics)
 RCChargeCurrent = Equation('i_t == (vs/r) * _e**(-t/tc)', electronics)
-someImportantRCEquation = Equation('x_t == x_f+ (x_i - x_f)*_e**(-t/tc)', physics)
+someImportantRCEquation = Equation('x_t == x_f+ (x_i - x_f)*_e**(-t/tc)', electronics)
 
 # i_L(t) == I_0*e*(-t/tc)
 RLDischargeCurrent = Equation('i_t == ii * _e**(-t/tc)', electronics)
 RLTimeConstant = Equation('tc == L/Req', electronics)
-# RLChargeCurrent = Equation('i_t == (vs/r) + ((ii - (vs/r)) * _e**(-t/tc))', electronicsNamespace)
-RLChargeCurrent = Equation('v_t == vs * _e**(-t/tc)', electronics)
+# RLChargeCurrent = Equation('i_t == (vs/r) + ((ii - (vs/r)) * _e**(-t/tc))', electronics)
+# RLChargeCurrent = Equation('v_t == vs * _e**(-t/tc)', electronics)
+# RLChargeCurrent = Equation('v_t == vs * _e**(-t/tc)', electronics)
 
 
 # inductorCurrent = iL(t) == (1/L) * Integral(high=t, low=0, vL(dummy)ddummy) + i_0
@@ -82,7 +83,7 @@ RLChargeCurrent = Equation('v_t == vs * _e**(-t/tc)', electronics)
 # Coulomb = amps / second
 
 #* AC Current
-# ACPowerLoss = Equation*('P_loss == i**2 * R_loss', electronicsNamespace)
+# ACPowerLoss = Equation*('P_loss == i**2 * R_loss', electronics)
 ACSine = Equation('v_t == V_m * sin(2*pi*f*t + ph)', electronics)
 frequency = Equation('T == 1/f', electronics)
 
@@ -113,16 +114,16 @@ inductorVoltage  = Equation('v_L_t == L*Derivative(i_L_t, t)*v_L_t', electronics
 inductorImpedance = Equation('phZ_L == phV_L/phI_L', electronics)
 inductorImpedance2 = Equation('phZ_L == _i*ohmega*L', electronics)
 inductorImpedance3 = Equation('phZ_L == _i*X_L', electronics)
-seriesRLImpedance = Equation('Z_eq_RL = R+_i*X_L', electronics)
+seriesRLImpedance = Equation('Z_eq_RL == R+_i*X_L', electronics)
 inductorReactance = Equation('X_L == ohmega*L', electronics)
 
 #? X_L=delta(ohmega*L)
 
 # For capacitors
 capacitorImpedance = Equation('phZ_C == phV_C/phi_C', electronics)
-capacitorImpedance2 = Equation('phZ_C == 1/_i*ohmega*C', electronics)
+capacitorImpedance2 = Equation('phZ_C == 1/(_i*ohmega*C)', electronics)
 capacitorImpedance3 = Equation('phZ_C == -_i*X_C', electronics)
-seriesRCImpedance = Equation('Z_eq_RC = R-_i*X_C', electronics)
+seriesRCImpedance = Equation('Z_eq_RC == R-_i*X_C', electronics)
 capacitorReactance = Equation('X_C == 1/(ohmega*C)', electronics)
 capacitorReactance2 = Equation('X_C == V_m/I_m', electronics)
 # Equation('X_C == 1/(2*pi*f*C)', electronics)(f=5*k, )
@@ -130,8 +131,8 @@ capacitorReactance2 = Equation('X_C == V_m/I_m', electronics)
 resistorImpedance = Equation('phZ == r', electronics)
 inductorImpedance = Equation('phZ == _i*X', electronics)
 inductorImpedance2 = Equation('phZ == _i*ohmega*L', electronics)
-capacitorImpedance = Equation('phZ == -_i*X', electronics)
-capacitorImpedance2 = Equation('phZ == 1/(_i*ohmega*C)', electronics)
+capacitorImpedance4 = Equation('phZ == -_i*X', electronics)
+capacitorImpedance5 = Equation('phZ == 1/(_i*ohmega*C)', electronics)
 
 ohmsLawImpedance = Equation('phV == phZ*phI', electronics)
 
@@ -151,20 +152,37 @@ reactance = Equation('reactance == im(Z)', electronics)
 
 #* AC Power
 instantPower = Equation('p_t == v_t * i_t', electronics)
-instantPowerSine = Equation('p_t == (1/2) * v_m*i_m * cos(theta_v - theta_i) + (1/2)*v_m*i_m * cos(2*ohmega*t + theta_v + theta_i)', electronics)
-Equation('v_t == v_m * cos(ohmega*t + theta_v', electronics)
-Equation('i_t == i_m * cos(ohmega*t + theta_i', electronics)
+instantPowerSine = Equation('p_t == (1/2) * v_m*i_m * cos(dph) + (1/2)*v_m*i_m * cos(2*ohmega*t + theta_v + theta_i)', electronics)
+instantVoltage = Equation('v_t == v_m * cos(ohmega*t + theta_v)', electronics)
+instantCurrent = Equation('i_t == i_m * cos(ohmega*t + theta_i)', electronics)
 
 # The average power, in watts, is the average of the instantaneous power over one period.
-averagePower = Equation('p == (1/T) * Integral(p_t, (t, 0, T))')
+averagePower = Equation('p == (1/T) * Integral(p_t, (t, 0, T))', electronics)
 # Integral(val, (var, low, high))
-averagePowerExpanded = Equation('p == (1/T) * Integral((1/2) * v_m*i_m * cos(theta_v - theta_i), (t, 0, T)) + (1/T) * Integral((1/2)*v_m*i_m * cos(2*ohmega*t + theta_v + theta_i), (t, 0, T))', electronics)
-averagePower2 = Equation('p == (1/2) v_m * i_m * cos(theta_v - theta_i)', electronics)
+averagePowerExpanded = Equation('p == (1/T) * Integral((1/2) * v_m*i_m * cos(dph), (t, 0, T)) + (1/T) * Integral((1/2)*v_m*i_m * cos(2*ohmega*t + theta_v + theta_i), (t, 0, T))', electronics)
+averagePower2 = Equation('p == (1/2) * v_m * i_m * cos(dph)', electronics, defaults={'theta_i':0, 'theta_v':0})
+averagePowerPhasors = Equation('p == (1/2) * re(phV * phI)', electronics)
 
 pureResistivePower = Equation('p == (1/2) * i_m**2 * r', electronics)
 pureReactivePower = Equation('p == 0', electronics)
 
+rms = Equation('i_eff == i_rms', electronics)
+rmsCurrent = Equation('i_eff == sqrt((1/T) * Integral(i_t**2, (t, 0, T)))', electronics)
+rmsVoltage = Equation('i_eff == sqrt((1/T) * Integral(v_t**2, (t, 0, T)))', electronics)
+rmsVoltageExpanded = Equation('i_eff == sqrt((1/T) * Integral(i_m**2 * cos(2*pi*f*t), (t, 0, T)))', electronics)
+averagePower3 = Equation('p == v_rms*i_rms*cos(dph)', electronics)
 
+#! ADD THESE!
+# v_r = phI*r
+# phI = phV_s / Z_eq
+# P_r = 1/2 * |v_r| * I_m * cos(dph)
+
+deciblePowerScale = Equation('G_db == 10*log(P_out/P_in, 10)', electronics)
+decibleVoltageScale = Equation('A_vdb == 20*log(V_out/V_in, 10)', electronics)
+systemTransferFunction = Equation('phH == phIn/phOut', electronics)
+frequencyDependantVoltageDivider = Equation('V_out == V_s * (Z_C / (r + Z_C))', electronics)
+# 1/sqrt(2) -- .707 -- -3db --some important constant?
+# when a circuit has a voltage gain magnitude of -3db, the output voltage has a smaller magnitude than the input voltage
 
 # impedance of an inductor approches oo as frequency approaches oo
 # impedance of a capacitor approches 0 as frequency approaches oo
@@ -190,7 +208,7 @@ pureReactivePower = Equation('p == 0', electronics)
 # 2 capacitors in series --
 # The imaginary part of impedance is reactance
 
-# # for constant dc current, a capaciter behaves like an open circuit -- and no current passes through
+#! # for constant dc current, a capaciter behaves like an open circuit -- and no current passes through
 
 # powerDelivered to a capacitor = v*i = v * (C*dv/dt)
 
@@ -201,3 +219,16 @@ pureReactivePower = Equation('p == 0', electronics)
 #* Misc:
 # coulombsLaw = Equation()
 # magneticFlux =
+
+
+parallelCapacitors = llCap = series
+seriesCapacitors = sCap = parallel
+
+parallelInductors = llInd = parallel
+seriesInductors = sInd = series
+
+seriesImpedances = series
+parallelImpedances = series
+
+seriesAdmittances = parallel
+parallelAdmittances = series

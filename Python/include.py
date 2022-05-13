@@ -32,6 +32,8 @@ import numpy as np
 import sympy as sp
 from importlib import reload
 from sympy.physics.vector import *
+# This is intentionally imported last
+from constants import *
 # if not debug(ZerosDict(globals())['NO_EQUATIONS']):
 # from Equations import *
 
@@ -121,6 +123,19 @@ def known(d: dict, *obj: str):
         if val is not None:
             newd[key] = val
     return newd
+
+
+
+
+def parallel(*resistors):
+    bottom = 0
+    for r in resistors:
+        bottom += 1/r
+    return 1/bottom
+
+
+def series(*resistors):
+    return sum(resistors)
 
 
 
@@ -953,6 +968,15 @@ class FastPhasor(complex):
     def fromComplex(c):
         return FastPhasor(c.real, c.imag)
 
+    @staticmethod
+    def fromSymbolic(symbolic:Add):
+        assert(isinstance(symbolic, Add))
+        re, im = symbolic.evalf().args
+        try:
+            return FastPhasor(re, im)
+        except TypeError:
+            return FastPhasor(im, re)
+
 
     # def asExp(self) -> "A*e^(j*phi)":
         # return self.A * math.e**(_i * _N(self.phi, n=5))
@@ -1065,10 +1089,6 @@ class FastPhasor(complex):
 
 
 
-
-
-
-
 # derivative of a sinusoid == Phasor.fromSine(sinusoid) * _i * sinusoid.angFeq
 # indefinite integral of a sinusoid == Phasor.fromSine(sinusoid) / (_i * sinusoid.angFeq)
 # adding sinusoids of the same frequency is equal to adding their phasors
@@ -1155,9 +1175,13 @@ def createPolarPlot(thetaPoints, *rPoints, size=(15, 8), labels=None, grid=True,
 
 
 
-Vec = ReferenceFrame('Vec')
+N = ReferenceFrame('N')
 ml=MappingList
 
+ans = Symbol('ans')
+
+ll=parallel
+s=series
 
 
 # phasor mult is

@@ -100,8 +100,11 @@ HIDE_TODO    = False
 # FORCE_TODO_LINK = False
 
 #* Convenience commonly used paths. ROOT can be set by the setRoot() or markRoot() functions
-DIR  = dirname(__file__)
-ROOT = dirname(DIR) if basename(DIR) in ('src', 'source') else DIR
+#! These are broken
+# DIR  = dirname(__file__)
+DIR  = None
+# ROOT = dirname(DIR) if basename(DIR) in ('src', 'source') else DIR
+ROOT = None#dirname(DIR) if basename(DIR) in ('src', 'source') else DIR
 HOME = str(Path.home())
 
 # Yes, this is not strictly accurate.
@@ -216,8 +219,9 @@ def resetColor():
     print('\033[49m', end='')
     # print('', end='')
 
-#todo Add support for openGL colors (-1.0 to 1.0
+#todo Add support for openGL colors (-1.0 to 1.0)
 #todo Consider changing the param paradigm to *rgba instead of all seperate parameters
+#todo add support for QColor
 def parseColorParams(r, g=None, b=None, a=None, bg=False) -> "((r, g, b, a), background)":
     """ Parses given color parameters and returns a tuple of equalized
         3-4 item tuple of color data, and a bool for background.
@@ -232,11 +236,11 @@ def parseColorParams(r, g=None, b=None, a=None, bg=False) -> "((r, g, b, a), bac
     if type(r) is str:
         raise NotImplementedError(f"parseColorParams does not yet support named colors")
     #* We've been given a list of values
-    elif type(r) in (tuple, list):
+    elif isinstance(r, (tuple, list)):
         if len(r) not in (3, 4):
             raise SyntaxError(f'Incorrect number ({len(r)}) of color parameters given')
         else:
-            return (tuple(r), (False if g is None else g) if not bg else bg)
+            return (tuple(r), ((False if g is None else g) if not bg else bg))
 
     #* We've been given a single basic value
     elif type(r) is int and b is None:
@@ -311,7 +315,9 @@ def clampColor(r, g=None, b=None, a=None):
 def invertColor(r, g=None, b=None, a=None):
     """ Inverts a color """
     rgba = parseColorParams(r, g, b, a)[0]
-    return tuple(255 - c for c in rgba[0])
+    # print(rgba)
+    # return tuple(255 - c for c in rgba[0])
+    return tuple(255 - c for c in rgba)
 
 
 ################################### Import Utilities ###################################
@@ -588,7 +594,10 @@ def _debugGetVarName(var, full=True, calls=1, metadata=None):
             return _debugManualGetVarName(var, full, calls+1, metadata)
 
 def _debugGetAdjustedFilename(filename):
-    return filename[len(ROOT)+1:]
+    if ROOT:
+        return filename[len(ROOT)+1:]
+    else:
+        return filename
 
 def _debugGetContext(metadata, useVscodeStyle, showFunc, showFile, showPath):
     #* Set the stuff in the [] (the "context")
@@ -1945,7 +1954,6 @@ class KeyStandard:
     pyautogui = {} # Just uses strings
 
     pygame = ({ } if not checkImport('pygame', fatal=False, printWarning=False) else {
-
     })
 
     standards = (ascii, string, pynput, pyautogui, pygame)
@@ -2002,7 +2010,8 @@ class Key:
                 # See if it's cased weird before we give up
                 try:
                     self._key = self.standard[key.lower()]
-                except: pass
+                except:
+                    pass
                 # If it's still not set, which means it's not in any standard
                 if self._key is None:
                     raise err
@@ -2022,7 +2031,6 @@ class Key:
         # for standard in KeyStandard.standards:
         #     if other in standard.keys():
         #         return debug(a._key == standard[b], clr=3)
-
 
     def __hash__(self):
         return hash(self._key)
@@ -2521,6 +2529,18 @@ class ZerosMultiAccessDict(ZerosDict):
                 rtn.append(super().__getitem__(key))
             return ensureNotIterable(rtn)
 
+class Psuedonym(str):
+    """ A string that is equal to a bunch of other strings """
+    def __new__(cls, official:str, *psuedonyms:str, caseSensitive=False):
+        obj = str.__new__(cls, official)
+        obj.name = official
+        obj._psuedonyms = psuedonyms
+        obj.caseSensitive = caseSensitive
+        return obj
+
+    def __eq__(self, other):
+        return other == self.name or any([other == i or ((other.lower() == i.lower()) if not self.caseSensitive else False) for i in self._psuedonyms])
+
 
 ################################### Misc. Useful Functions ###################################
 struct = namedtuple # I'm used to C
@@ -2735,11 +2755,6 @@ def round2(num, digits=3, tostr=True, scinot:int=False):
         return scinotation.format(ans, scinot)
     else:
         return '{:1f}'.format(ans) if tostr else ans
-
-
-
-
-
 
 
 ################################### API Specific functions ###################################
@@ -3275,11 +3290,16 @@ if ENABLE_TESTING:
             if key == keyboard.Key.esc:
                 return False
 
+        debug(keyboard.Key.alt_r)
+        debug(invertDict(KeyStandard.pynput)['rightAlt'])
+        debug(KeyStandard.pynput[keyboard.Key.alt_r])
+
         # Collect events until released
         with keyboard.Listener(
                 on_press=on_press,
                 on_release=on_release) as listener:
             listener.join()
+
 
     #* round testing
     if False:
@@ -3299,3 +3319,19 @@ if ENABLE_TESTING:
         debug(round2(pi, 8))
         debug(round2(pi, scinot=3))
         debug(round2(pi, scinot=9))
+
+
+    #* Psuedonym Testing
+    if False:
+        yes = Psuedonym('yes', 'ye', 'si', 'indeed')
+        debug(yes == 'yes')
+        debug(yes == 'ye')
+        debug(yes == 'yea')
+
+        no = Psuedonym('no', 'nein', 'NOT', caseSensitive=True)
+        debug(no == 'no')
+        debug(no == 'Nein')
+        debug(no == 'nein')
+        debug(no == 'not')
+
+        debug(no)
