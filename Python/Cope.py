@@ -61,6 +61,7 @@ __copyright__ = '(c) 2021, Copeland Carter'
 from atexit import register as registerExit
 from re import search as research
 from re import match as rematch
+from re import sub as resub
 from math import floor, ceil, tau, degrees, radians, pi as PI
 from ctypes import pointer, py_object
 from inspect import stack
@@ -2667,6 +2668,42 @@ def fancyComment(title='', char='#', endChar='#', lineLimit=80):
     """ Replaces the call with a nicely formatted comment line """
     halfLen = ((lineLimit / len(char)) - len(title) - 1 - (2 if len(title) else 0) - len(endChar)) / 2
     seperateChar = ' ' if len(title) else ''
+
+def confirm(prompt='Continue?', returnIfInvalid=False, failedFunc=lambda: None, includeYN=True, quit=False, quitMsg='Okay then, exiting...'):
+    response = input(prompt + (" (y/N): " if includeYN else '')).lower()
+    if response in ('y', 'yes'):
+        return True
+    elif response in ('n', 'no'):
+        if quit:
+            print(quitMsg)
+            exit(1)
+        else:
+            failedFunc()
+        return False
+    else:
+        print('Invalid Input')
+        if returnIfInvalid:
+            return None
+        else:
+            confirm(prompt, failedFunc=failedFunc, includeYN=includeYN, quit=quit, quitMsg=quitMsg)
+
+@dependsOnPackage('unicodedata', 'normalize')
+def slugify(value, allow_unicode=False, allow_space=False, convert_case=True):
+    """
+    Taken from https://github.com/django/django/blob/master/django/utils/text.py
+    Convert to ASCII if 'allow_unicode' is False. Convert spaces or repeated
+    dashes to single dashes. Remove characters that aren't alphanumerics,
+    underscores, or hyphens. Convert to lowercase. Also strip leading and
+    trailing whitespace, dashes, and underscores.
+    """
+    value = str(value)
+    if allow_unicode:
+        value = normalize('NFKC', value)
+    else:
+        value = normalize('NFKD', value).encode('ascii', 'ignore').decode('ascii')
+    value = resub(r'[^\w\s-]', '', value.lower() if convert_case else value)
+    return resub(r'[-\n\r\t\v\f]+' if allow_space else r'[-\s]+', '-', value).strip('-_')
+
 ################################## Electronics #################################
 
 # No, English does not make any sense.

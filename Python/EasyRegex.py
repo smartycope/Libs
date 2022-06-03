@@ -2,13 +2,13 @@
 """ EasyRegex
 An readable and intuitive way to generate Regular Expressions
 """
-__version__ = '2.2.0'
+__version__ = '2.2.1'
 __author__ = 'Copeland Carter'
 __email__ = 'smartycope@gmail.com'
 __license__ = 'GPL 3.0'
 __copyright__ = '(c) 2021, Copeland Carter'
 
-# This is to Regex expressions what CMake is to makefiles
+# This is to Regex expressions as CMake is to makefiles
 # Explination of how this works:
     # This is version 2. The original version just had an EasyRegex class with a bunch of members that returned self,
     # then you chained together member function calls.
@@ -248,6 +248,13 @@ class EasyRegexMember:
             self.funcList += thing.funcList
         return self
 
+    def __radd__(self, thing):
+        if type(thing) is str:
+            self.funcList.append(EasyRegexFunctionCall(lambda cur: cur + thing))
+        elif type(thing) is EasyRegexMember:
+            self.funcList += thing.funcList
+        return self
+
     def __iadd__(self, thing):
         tmp = self + thing
         return tmp
@@ -367,6 +374,9 @@ class EasyRegexSingleton:
             for part in self.escapeChars:
                 i = re.sub(r'(?<!\\)' + part, part, i)
             return i
+        # For parameters like matchNum has
+        elif isinstance(i, int):
+            return str(i)
         else:
             raise TypeError(f'Incorrect type {type(i)} given to EasyRegex parameter: Must be string or another EasyRegex chain.')
 
@@ -438,6 +448,7 @@ matchMoreThan = EasyRegexSingleton(lambda cur, min, input='':      cur + ('' if 
                                    lambda cur, min, input='':      cur + ((_prevThing(cur) if not len(input) else input) * randint(min - 1, _alot + min - 1)))
 matchAtLeast  = EasyRegexSingleton(lambda cur, min, input='':      cur + ('' if not len(input) else r'(' + input + r')') + r'{' + str(min) + r',}',
                                    lambda cur, min, input='':      cur + ((_prevThing(cur) if not len(input) else input) * randint(min, _alot + min)))
+anyAmt = matchMax
 
 # Single Characters
 whitespace = EasyRegexSingleton(r'\s',  _defaultInvert(_whitespace))
@@ -456,13 +467,13 @@ whiteChunk = whitechunk
 # Explicit Characters
 spaceOrTab     = EasyRegexSingleton(r'[ \t]',  _defaultInvert(' \t'))
 newLine        = EasyRegexSingleton(r'\n',     _defaultInvert('\n'))
-newline = newLine
 carriageReturn = EasyRegexSingleton(r'\r',     _defaultInvert('\r'))
 tab            = EasyRegexSingleton(r'\t',     _defaultInvert('\t'))
 space          = EasyRegexSingleton(r' ',      _defaultInvert(' '))
 quote          = EasyRegexSingleton(r'(\'|")', _defaultInvert(choice('\'"')))
 verticalTab    = EasyRegexSingleton(r'\v',     _defaultInvert('\v'))
 formFeed       = EasyRegexSingleton(r'\f',     _defaultInvert('\f'))
+newline = newLine
 
 # Not Chuncks
 notWhitespace = EasyRegexSingleton(r'\S', _defaultInvert(choice(_digits  + _letters     + _punctuation + '_')))
